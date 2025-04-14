@@ -874,17 +874,6 @@ def get_announcement_stats(announcement_id):
     return jsonify({"dates": dates, "views": views, "clicks": clicks})
 
 
-@app.route("/reject_event/<int:event_id>", methods=["POST"])
-@login_required
-def reject_event(event_id):
-    if not current_user.is_moderator:
-        abort(403)
-
-    event = Event.query.get_or_404(event_id)
-    event.status = EventStatus.REJECTED.value
-    db.session.commit()
-
-    return jsonify({"success": True, "message": "Ивент отклонён!"})
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
