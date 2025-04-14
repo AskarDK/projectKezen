@@ -2443,14 +2443,14 @@ def handle_admin_message(data):
         "timestamp": message.timestamp.isoformat()
     }, room=f"admin_chat_{event_id}")
 
+notifications = Notification.query.all()
+        for n in notifications:
+            print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        notifications = Notification.query.all()
-        for n in notifications:
-            print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
-
+        
     port = int(os.environ.get("PORT", 8080))
     http_server = WSGIServer(("0.0.0.0", port), app, handler_class=WebSocketHandler)
     http_server.serve_forever()
