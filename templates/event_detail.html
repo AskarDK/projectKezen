@@ -1,0 +1,1151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Уменьшаем размер кнопки троеточия */
+
+    .chat-footer {
+    display: flex;
+    align-items: center;
+    padding-top: 10px;
+}
+
+
+.dropdown-toggle {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 18px;
+    padding: 0 10px;
+}
+
+/* Убираем стандартный фон у кнопки */
+.dropdown-toggle:focus, .dropdown-toggle:hover {
+    box-shadow: none;
+}
+
+/* Список действий */
+.dropdown-menu {
+    min-width: 160px;
+    font-size: 14px;
+}
+
+/* Стили для опасных действий (удаление) */
+.dropdown-item.text-danger {
+    color: red;
+}
+.dropdown-item.text-danger:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+
+</style>
+<div class="container mt-5">
+    <h1 class="text-center">
+        {{ event.title }}
+            <span class="badge bg-dark text-light ms-2" style="font-size: 0.9rem;">
+                🚫 Мин. рейтинг: {{ event.required_rating }}
+            </span>
+    </h1>
+
+    <!-- Вкладки -->
+    <ul class="nav nav-tabs mt-4" id="eventTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#main">Основной</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#details">Детали ивента</a>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4">
+        <!-- Основной -->
+        <div class="tab-pane fade show active" id="main">
+            <div class="text-center">
+    <img src="{{ url_for('uploaded_file', filename=event.image.split('/')[-1]) if event.image else '/uploads/default_event.jpg' }}"
+         class="img-fluid event-image rounded shadow-sm"
+         alt="{{ event.title }}">
+</div>
+
+
+            <p class="mt-3">{{ event.description }}</p>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <p><strong>📍 Место:</strong> {{ event.location }}</p>
+                <p><strong>📅 Дата:</strong> {{ event.date }} <strong>🕒 Время:</strong> {{ event.time }}</p>
+            </div>
+
+            <p><strong>⭐ Рейтинг:</strong> {{ event.rating }}</p>
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+{% if not is_creator %}
+    {% if event_datetime < current_datetime %}
+        <button class="btn btn-success" disabled>
+            ✅ Вступить в ивент (Истек срок)
+        </button>
+    {% else %}
+        <button id="joinBtn" class="btn btn-success {% if is_participant %}d-none{% endif %}"
+            onclick="joinEvent({{ event.id }})">
+            ✅ Вступить в ивент
+        </button>
+    {% endif %}
+{% endif %}
+
+    {% if show_survey %}
+    <div class="alert alert-info">
+        <h4>Опрос по завершению ивента</h4>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="feedback" class="form-label">Как вам наша платформа?</label>
+                <textarea class="form-control" id="feedback" name="feedback" required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="platform_rating" class="form-label">Оцените платформу (1-5)</label>
+                <input type="number" class="form-control" id="platform_rating" name="platform_rating" min="1" max="5" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+        </form>
+    </div>
+{% endif %}
+
+
+
+    <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+
+    <button id="leaveBtn" class="btn btn-danger {% if not is_participant %}d-none{% endif %}"
+        onclick="leaveEvent({{ event.id }})">
+        ❌ Покинуть
+    </button>
+</div>
+
+          {% if is_creator and event.is_active %}
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-primary mt-3" id="editEventBtn">
+            ✏️ Изменить ивент
+        </button>
+        <button class="btn btn-danger mt-3" id="completeEventBtn">
+            🏁 Завершить ивент
+        </button>
+    </div>
+{% endif %}
+
+
+
+
+            {% if not event.is_active %}
+    <div class="alert alert-secondary text-center">
+        <strong>⛔ Этот ивент завершен.</strong>
+    </div>
+{% endif %}
+
+
+    <ul class="nav nav-tabs mt-4" id="chatTabs">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#generalChat">Общий чат</a>
+    </li>
+    {% if is_admin or is_creator %}
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#adminChat">Чат админов</a>
+    </li>
+{% endif %}
+
+</ul>
+
+
+
+<div class="tab-content mt-4">
+    <!-- Общий чат -->
+    <div class="tab-pane fade show active" id="generalChat">
+        <div class="chat-box">
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-footer d-flex">
+    <input type="text" id="chatInput" class="form-control me-2" placeholder="Введите сообщение...">
+    <button class="btn btn-primary" id="sendMessageBtn">➤</button>
+</div>
+
+        </div>
+    </div>
+
+    {% if is_admin or is_creator %}
+    <!-- Чат админов -->
+    <div class="tab-pane fade" id="adminChat">
+        <div class="chat-box">
+            <div id="adminChatMessages" class="chat-messages"></div>
+            <div class="chat-footer">
+                <input type="text" id="adminChatInput" class="form-control" placeholder="Введите сообщение в чат админов...">
+                <button class="btn btn-warning" id="sendAdminMessageBtn">➤</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</div> <!-- Закрываем #main (вкладку Основной) -->
+
+
+
+        <!-- Детали ивента -->
+        <div class="tab-pane fade" id="details">
+            <h4>📋 Детали мероприятия</h4>
+            <ul class="list-group">
+                <li class="list-group-item"><strong>Название:</strong> {{ event.title }}</li>
+                <li class="list-group-item"><strong>Описание:</strong> {{ event.description }}</li>
+                <li class="list-group-item"><strong>Место:</strong> {{ event.location }}</li>
+                <li class="list-group-item"><strong>Дата:</strong> {{ event.date }}</li>
+                <li class="list-group-item"><strong>Время:</strong> {{ event.time }}</li>
+                <li class="list-group-item"><strong>Рейтинг:</strong> ⭐ {{ event.rating }}</li>
+                <li class="list-group-item"><strong>Рейтинг организатора:</strong>⭐ {{ event.creator_user.rating }}</li>
+            </ul>
+
+            <h4 class="mt-4">📍 Местоположение</h4>
+<div id="eventMap" style="width: 100%; height: 300px; border-radius: 8px;"></div>
+
+
+           <h4 class="mt-4">👥 Участники ивента</h4>
+
+<h5>👑 Создатель</h5>
+<ul class="list-group">
+    <li class="list-group-item d-flex align-items-center">
+        <img src="{{ url_for('uploaded_file', filename=creator_user.profile_picture.split('/')[-1]) if creator_user.profile_picture else '/static/uploads/default_avatar.jpg' }}"
+             class="participant-avatar">
+        <a href="{{ url_for('profile', user_id=creator_user.id) }}" class="ms-2">{{ creator_user.username }}</a>
+    </li>
+</ul>
+
+<h5>🛠 Администраторы</h5>
+<ul class="list-group" id="adminList">
+    {% for user in admin_users %}
+<li class="list-group-item d-flex align-items-center justify-content-between {% if user.id == current_user.id %}bg-light border-start border-3 border-primary{% endif %}">
+        <div class="d-flex align-items-center">
+            <img src="{{ url_for('uploaded_file', filename=user.profile_picture.split('/')[-1]) if user.profile_picture else '/static/uploads/default_avatar.jpg' }}"
+                 class="participant-avatar">
+<a href="{{ url_for('profile', user_id=user.id) }}" class="ms-2 {% if user.id == current_user.id %}fw-bold text-primary{% endif %}">
+    {{ user.username }}
+</a>
+        </div>
+
+        {% if is_creator %}
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="adminMenu{{ user.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                    ⋮
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="adminMenu{{ user.id }}">
+                    <li><a class="dropdown-item makeParticipantBtn" href="#" data-user-id="{{ user.id }}">⬇️ Сделать участником</a></li>
+                    <li><a class="dropdown-item text-danger removeParticipantBtn" href="#" data-user-id="{{ user.id }}">❌ Удалить</a></li>
+                </ul>
+            </div>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+<h5>🎟 Участники</h5>
+<ul class="list-group" id="participantList">
+    {% for user in participant_users %}
+        <li class="list-group-item d-flex align-items-center justify-content-between {{ user.id == current_user.id and 'bg-light border-start border-3 border-primary' or '' }}">
+            <div class="d-flex align-items-center">
+                <img src="{{ url_for('uploaded_file', filename=user.profile_picture.split('/')[-1]) if user.profile_picture else '/static/uploads/default_avatar.jpg' }}"
+                     class="participant-avatar">
+                <a href="{{ url_for('profile', user_id=user.id) }}" class="ms-2 {{ user.id == current_user.id and 'fw-bold text-primary' or '' }}">
+                    {{ user.username }}
+                </a>
+            </div>
+            {% if is_creator %}
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    ⋮
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item makeAdminBtn" href="#" data-user-id="{{ user.id }}">⬆️ Сделать админом</a></li>
+                    <li><a class="dropdown-item text-danger removeParticipantBtn" href="#" data-user-id="{{ user.id }}">❌ Удалить</a></li>
+<li><a class="dropdown-item text-danger banParticipantBtn" href="#" data-user-id="{{ user.id }}">Забанить</a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+
+
+
+
+{% if not admin_users and not participant_users %}
+    <p class="text-muted">👥 Пока нет участников</p>
+{% endif %}
+
+
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="confirmCompleteEventModal" tabindex="-1" aria-labelledby="confirmCompleteEventLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmCompleteEventLabel">Подтверждение завершения</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                Вы уверены, что хотите завершить этот ивент? Он исчезнет у всех участников.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmCompleteEventBtn">Завершить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("completeEventBtn")?.addEventListener("click", function () {
+    let confirmModal = new bootstrap.Modal(document.getElementById("confirmCompleteEventModal"));
+    confirmModal.show();
+});
+
+document.getElementById("confirmCompleteEventBtn")?.addEventListener("click", function () {
+    fetch(`/complete_event/{{ event.id }}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Ивент успешно завершен!");
+            window.location.href = "/"; // Перенаправляем на главную страницу
+        } else {
+            alert("❌ Ошибка завершения: " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка при завершении ивента:", error));
+});
+</script>
+
+<!-- Стили -->
+<style>
+    .event-image {
+        max-height: 300px;
+        object-fit: cover;
+        width: 100%;
+    }
+    .chat-messages {
+        height: 200px;
+        overflow-y: auto;
+        background: #f9f9f9;
+    }
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+    }
+    .participant-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+</style>
+
+<style>
+/* Чат-бокс */
+.chat-box {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Контейнер сообщений */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Контейнер группы сообщений от одного пользователя */
+.message-group {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* Контейнер для аватарки */
+.avatar-container {
+    width: 40px;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+}
+
+/* Аватарка */
+.chat-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: 0.3s;
+}
+
+/* Эффект наведения на аватарку */
+.chat-avatar:hover {
+    transform: scale(1.1);
+}
+
+/* Контейнер всех сообщений одного пользователя */
+.messages-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+}
+
+/* Базовый стиль сообщений */
+.message {
+    max-width: 70%;
+    min-width: 120px;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 14px;
+    word-wrap: break-word;
+    line-height: 1.4;
+    position: relative;
+    display: inline-block;
+}
+
+/* Выравнивание сообщений */
+
+/* Чужие сообщения (слева) */
+.received-container {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+/* Свои сообщения (справа) */
+.sent-container {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+/* Чужие сообщения */
+.received {
+    background: #f1f1f1;
+    color: black;
+    border-radius: 15px 15px 15px 0;
+    text-align: left;
+}
+
+/* Свои сообщения */
+.sent {
+    background: #007bff;
+    color: white;
+    border-radius: 15px 15px 0 15px;
+    text-align: left;
+}
+
+/* Фикс отступов для своих сообщений */
+.sent-container .messages-container {
+    align-items: flex-end;
+}
+
+/* Время сообщения */
+.message-time {
+    font-size: 11px;
+    color: #666;
+    text-align: right;
+    display: block;
+    margin-top: 3px;
+}
+
+/* Имя пользователя (отображается только у чужих) */
+.message-username {
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    display: block;
+    margin-bottom: 3px;
+}
+
+/* Группировка сообщений от одного пользователя */
+.received-container .messages-container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Первое сообщение в группе у чужого пользователя */
+.received-container .messages-container .message:first-child {
+    margin-left: 0;
+}
+
+/* Первое сообщение в группе с аватаркой */
+.received-container:first-child .message {
+    margin-left: 0;
+}
+
+/* Свои сообщения остаются без отступа */
+.sent-container .messages-container .message {
+    margin-left: 0;
+}
+
+/* Отступ между сообщениями */
+.message-text {
+    margin-bottom: 5px;
+}
+
+    /* Время у своих сообщений */
+.sent .message-time {
+    color: white; /* Белый */
+}
+
+    @keyframes vote-animation {
+    from {
+        background-color: #f1f1f1;
+    }
+    to {
+        background-color: #d4edda;
+    }
+}
+
+.vote-option.selected {
+    animation: vote-animation 0.5s forwards;
+    color: green;
+}
+
+</style>
+
+<script src="https://api-maps.yandex.ru/2.1/?apikey=7494aa8b-ef09-4ac8-b122-ea4aa6791b3d&lang=ru_RU"></script>
+<script>
+    function initEventMap() {
+        ymaps.ready(function () {
+            var eventCoordinates = "{{ event.coordinates }}";
+
+            if (!eventCoordinates) {
+                console.error("❌ Ошибка: координаты события не указаны.");
+                return;
+            }
+
+            var coords = eventCoordinates.split(',').map(Number); // Преобразуем строку "lat,lng" в массив чисел
+
+            var map = new ymaps.Map("eventMap", {
+                center: coords,
+                zoom: 14,
+                controls: ["zoomControl", "geolocationControl"]
+            });
+
+            var placemark = new ymaps.Placemark(coords, {
+                balloonContent: "<strong>{{ event.title }}</strong><br>{{ event.location }}"
+            }, {
+                preset: "islands#redDotIcon" // Красная иконка маркера
+            });
+
+            map.geoObjects.add(placemark);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", initEventMap);
+</script>
+
+<script>
+
+function loadParticipants() {
+    fetch(`/get_event_participants/${eventId}`)
+    .then(response => response.json())
+    .then(data => {
+        console.log("📢 Обновляем список участников:", data);
+
+        const adminList = document.getElementById("adminList");
+        const participantList = document.getElementById("participantList");
+
+        adminList.innerHTML = "";
+        participantList.innerHTML = "";
+
+        // Обновляем список администраторов
+    data.admins.forEach(user => {
+    let profilePic = user.profile_picture
+    ? `/uploads/${user.profile_picture.split('/').pop()}`
+    : "{{ url_for('static', filename='uploads/default_avatar.jpg') }}";
+
+    let profileUrl = `/profile/${user.id}`;
+
+    adminList.innerHTML += `
+        <li class="list-group-item d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <img src="${profilePic}" class="participant-avatar">
+                <a href="/profile/${user.id}" class="ms-2 ${user.id === currentUserId ? 'fw-bold text-primary' : ''}">${user.username}</a>
+            </div>
+
+            ${data.is_creator ? `
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        ⋮
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item makeParticipantBtn" href="#" data-user-id="${user.id}">⬇️ Сделать участником</a></li>
+                        <li><a class="dropdown-item text-danger removeParticipantBtn" href="#" data-user-id="${user.id}">❌ Удалить</a></li>
+                    </ul>
+                </div>
+            ` : ""}
+        </li>`;
+});
+
+
+        // Обновляем список участников
+        data.participants.forEach(user => {
+let profilePic = user.profile_picture
+    ? `/uploads/${user.profile_picture.split('/').pop()}`
+    : "{{ url_for('static', filename='uploads/default_avatar.jpg') }}";
+
+            participantList.innerHTML += `
+    <li class="list-group-item d-flex align-items-center justify-content-between ${user.id === currentUserId ? 'bg-light border-start border-3 border-primary' : ''}">
+                    <div class="d-flex align-items-center">
+                        <img src="${profilePic}" class="participant-avatar">
+<a href="/profile/${user.id}" class="ms-2 ${user.id === currentUserId ? 'fw-bold text-primary' : ''}">${user.username}</a>
+                    </div>
+
+                    ${(data.is_creator || data.is_admin) ? `
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                ⋮
+                            </button>
+                            <ul class="dropdown-menu">
+                                ${data.is_creator ? `<li><a class="dropdown-item makeAdminBtn" href="#" data-user-id="${user.id}">⬆️ Сделать админом</a></li>` : ""}
+                                <li><a class="dropdown-item text-danger removeParticipantBtn" href="#" data-user-id="${user.id}">❌ Удалить</a></li>
+                                <li><a class="dropdown-item text-danger banParticipantBtn" href="#" data-user-id="${user.id}">🚫 Забанить</a></li>` : ""}
+
+                            </ul>
+                        </div>
+                    ` : ""}
+                </li>`;
+        });
+
+        addParticipantHandlers();
+    })
+    .catch(error => console.error("Ошибка загрузки участников:", error));
+}
+
+
+// ✅ Функция повышения до админа
+function makeAdmin(userId) {
+    fetch(`/make_admin/${eventId}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("✅ Пользователь стал админом!");
+            loadParticipants();
+        } else {
+            console.error("Ошибка:", data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка запроса:", error));
+}
+
+// ✅ Функция понижения до участника
+function makeParticipant(userId) {
+    fetch(`/make_participant/${eventId}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("✅ Пользователь понижен до участника!");
+            loadParticipants();
+        } else {
+            console.error("Ошибка:", data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка запроса:", error));
+}
+
+// ✅ Функция удаления участника или админа
+function removeParticipant(userId) {
+    fetch(`/remove_participant/${eventId}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("✅ Пользователь удалён!");
+            loadParticipants();
+        } else {
+            console.error("Ошибка:", data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка запроса:", error));
+}
+
+// ✅ Обработчики кнопок для назначения ролей и удаления
+// ✅ Добавляем обработчики к выпадающему меню
+function addParticipantHandlers() {
+    document.querySelectorAll(".makeAdminBtn").forEach(button => {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            makeAdmin(this.getAttribute("data-user-id"));
+        });
+    });
+
+    document.querySelectorAll(".makeParticipantBtn").forEach(button => {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            makeParticipant(this.getAttribute("data-user-id"));
+        });
+    });
+
+    document.querySelectorAll(".removeParticipantBtn").forEach(button => {
+        button.addEventListener("click", function (e) {
+            e.preventDefault();
+            removeParticipant(this.getAttribute("data-user-id"));
+        });
+    });
+}
+
+
+// ✅ Загружаем участников при загрузке страницы
+document.addEventListener("DOMContentLoaded", function () {
+    loadParticipants();
+});
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+const eventId = {{ event.id }};
+const currentUserId = {{ current_user.id }};
+const chatBox = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendMessageBtn = document.getElementById("sendMessageBtn");
+let isFirstLoad = true; // Флаг для отслеживания первой загрузки
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadMessages(); // Загружаем сообщения и один раз скроллим вниз
+});
+
+function scrollToBottom(container) {
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+    if (isAtBottom) {
+        setTimeout(() => {
+            container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+        }, 100);
+    }
+}
+
+// ✅ Функция отправки сообщения
+async function sendMessage() {
+    let text = chatInput.value.trim();
+    if (!text) return;
+
+    try {
+        let response = await fetch(`/send_event_message/${eventId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        let result = await response.json();
+        if (!result.success) throw new Error(result.message);
+
+        chatInput.value = "";
+        displayMessage(result.message, chatBox);
+        scrollToBottom(chatBox);
+
+    } catch (error) {
+        console.error("❌ Ошибка отправки:", error);
+    }
+}
+async function loadMessages() {
+    try {
+        let response = await fetch(`/get_event_messages/${eventId}`);
+        if (!response.ok) throw new Error("Ошибка загрузки сообщений");
+        let messages = await response.json();
+
+        const previousScrollHeight = chatBox.scrollHeight;
+        const wasAtBottom = chatBox.scrollTop + chatBox.clientHeight >= previousScrollHeight - 10;
+
+        chatBox.innerHTML = ""; // Очищаем контейнер перед добавлением новых сообщений
+        messages.forEach(msg => displayMessage(msg, chatBox));
+
+        if (isFirstLoad || wasAtBottom) {
+            chatBox.scrollTop = chatBox.scrollHeight; // Скроллим вниз только при первой загрузке или если пользователь был внизу
+        }
+
+        isFirstLoad = false; // После первой загрузки меняем флаг
+
+    } catch (error) {
+        console.error("❌ Ошибка загрузки сообщений:", error);
+    }
+}
+
+
+
+
+function displayMessage(msg, container) {
+    let isCurrentUser = parseInt(msg.user_id) === currentUserId;
+    let msgClass = isCurrentUser ? "sent" : "received";
+    let timestamp = formatTime(msg.timestamp);
+
+    let lastMessage = container.lastElementChild;
+    let lastUserId = lastMessage ? lastMessage.dataset.userId : null;
+    let isNewGroup = lastUserId !== String(msg.user_id); // Проверка, начинается ли новая группа сообщений
+
+    let profilePic = msg.profile_picture;
+let profileUrl = `/profile/${msg.user_id}`;
+
+    console.log("🔍 Message data:", msg);
+
+
+    if (isNewGroup) {
+        // Создаем новый контейнер группы сообщений
+        let messageGroup = document.createElement("div");
+        messageGroup.classList.add("message-group", isCurrentUser ? "sent-container" : "received-container");
+        messageGroup.dataset.userId = msg.user_id;
+
+        if (!isCurrentUser) {
+            // Добавляем аватарку и имя (только для других пользователей)
+            let avatarContainer = document.createElement("div");
+            avatarContainer.classList.add("avatar-container");
+            avatarContainer.innerHTML = `<a href="${profileUrl}"><img src="${profilePic}" class="chat-avatar"></a>`;
+
+            messageGroup.appendChild(avatarContainer);
+        }
+
+        // Контейнер для сообщений пользователя
+        let messagesContainer = document.createElement("div");
+        messagesContainer.classList.add("messages-container");
+
+        // Добавляем первое сообщение в группу
+        let messageDiv = createMessageDiv(msg, msgClass, timestamp, isNewGroup, isCurrentUser);
+        messagesContainer.appendChild(messageDiv);
+
+        messageGroup.appendChild(messagesContainer);
+        container.appendChild(messageGroup);
+    } else {
+        // Добавляем сообщение в существующую группу
+        let lastGroup = container.lastElementChild.querySelector(".messages-container");
+        let messageDiv = createMessageDiv(msg, msgClass, timestamp, false, isCurrentUser);
+        lastGroup.appendChild(messageDiv);
+    }
+
+}
+
+function createMessageDiv(msg, msgClass, timestamp, isFirstInGroup, isCurrentUser) {
+    let messageDiv = document.createElement("div");
+    messageDiv.classList.add("message", msgClass);
+
+    // Логин отображается только у других пользователей
+    messageDiv.innerHTML =
+        `${isFirstInGroup && !isCurrentUser ? `<strong class="message-username">${msg.username}:</strong>` : ""}
+         <div class="message-text">${msg.text}</div>
+         <span class="message-time">${timestamp}</span>`;
+
+    return messageDiv;
+}
+
+
+
+
+// ✅ Функция форматирования времени
+function formatTime(timestamp) {
+    if (!timestamp) return "—:—";
+
+    let date = new Date();
+    let [hours, minutes] = timestamp.split(":");
+    date.setHours(hours, minutes);
+
+    return date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+}
+
+// ✅ Функция автоскролла вниз
+
+
+function scrollToBottomIfNeeded(container) {
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+    if (isAtBottom) {
+        setTimeout(() => {
+            container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+        }, 100);
+    }
+}
+
+
+// ✅ Обновление чата каждые 5 секунд
+setInterval(() => {
+    loadMessages(); // 🔥 Теперь не принудительно скроллит, а проверяет перед этим
+}, 5000);
+
+
+// ✅ Обработчики отправки сообщений
+chatInput.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) sendMessage(); });
+sendMessageBtn.addEventListener("click", sendMessage);
+
+// ✅ Загружаем чат при загрузке страницы
+document.addEventListener("DOMContentLoaded", loadMessages);
+
+</script>
+
+<script>
+   const adminChatBox = document.getElementById("adminChatMessages");
+const adminChatInput = document.getElementById("adminChatInput");
+const sendAdminMessageBtn = document.getElementById("sendAdminMessageBtn");
+
+// ✅ Функция отправки сообщения в админский чат
+async function sendAdminMessage() {
+    let text = adminChatInput.value.trim();
+    if (!text) return;
+
+    try {
+        let response = await fetch(`/send_admin_message/${eventId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        let result = await response.json();
+        if (!result.success) throw new Error(result.message);
+
+        adminChatInput.value = "";
+        displayMessage(result.message, adminChatBox);
+        scrollToBottomIfNeeded(adminChatBox);
+
+    } catch (error) {
+        console.error("❌ Ошибка отправки в админский чат:", error);
+    }
+}
+
+let isFirstAdminLoad = true;
+// ✅ Функция загрузки сообщений админского чата
+async function loadAdminMessages() {
+    try {
+        let response = await fetch(`/get_admin_messages/${eventId}`);
+        let messages = await response.json();
+
+        if (!response.ok) throw new Error(messages.message);
+        if (!messages.length) return;
+
+        adminChatBox.innerHTML = "";
+        messages.forEach(msg => displayMessage(msg, adminChatBox));
+
+        if (isFirstAdminLoad) {
+            requestAnimationFrame(() => {
+                adminChatBox.scrollTo({ top: adminChatBox.scrollHeight, behavior: "smooth" });
+            });
+            isFirstAdminLoad = false;
+        }
+
+    } catch (error) {
+        console.error("❌ Ошибка загрузки админских сообщений:", error);
+    }
+}
+
+
+
+
+// ✅ Автообновление чата каждые 5 секунд
+setInterval(loadAdminMessages, 5000);
+
+// ✅ Обработчики отправки сообщений
+if (adminChatInput && sendAdminMessageBtn) {
+    adminChatInput.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) sendAdminMessage(); });
+    sendAdminMessageBtn.addEventListener("click", sendAdminMessage);
+}
+
+// ✅ Загружаем админский чат при загрузке страницы
+document.addEventListener("DOMContentLoaded", loadAdminMessages);
+
+</script>
+<script>
+    // ✅ Удаление участника или админа
+
+
+</script>
+
+<div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEventLabel">✏️ Редактировать ивент</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEventForm">
+                    <div class="mb-3">
+                        <label for="editTitle" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="editTitle" value="{{ event.title }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="editDescription">{{ event.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLocation" class="form-label">Место</label>
+                        <input type="text" class="form-control" id="editLocation" value="{{ event.location }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDate" class="form-label">Дата</label>
+                        <input type="date" class="form-control" id="editDate" value="{{ event.date }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTime" class="form-label">Время</label>
+                        <input type="time" class="form-control" id="editTime" value="{{ event.time }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRatingRestriction" class="form-label">🔒 Минимальный рейтинг участника</label>
+                        <select class="form-select" id="editRatingRestriction">
+                            {% for i in range(0, 51) %}
+                                {% set rating = i / 10 %}
+                                <option value="{{ rating }}" {% if rating == event.required_rating %}selected{% endif %}>
+                                    {{ rating }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Script>
+      const event_id = {{ event.id }};
+    document.getElementById("editEventBtn")?.addEventListener("click", function () {
+    let editModal = new bootstrap.Modal(document.getElementById("editEventModal"));
+    editModal.show();
+});
+
+document.getElementById("editEventForm")?.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    let updatedEvent = {
+        title: document.getElementById("editTitle").value,
+        description: document.getElementById("editDescription").value,
+        location: document.getElementById("editLocation").value,
+        date: document.getElementById("editDate").value,
+        time: document.getElementById("editTime").value,
+        required_rating: parseFloat(document.getElementById("editRatingRestriction").value)
+    };
+
+    fetch(`/update_event/{{ event.id }}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEvent)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Ивент успешно обновлён!");
+            location.reload();
+        } else {
+            alert("❌ Ошибка: " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка при обновлении ивента:", error));
+});
+
+    function showToast(message, type = "info") {
+    let toastContainer = document.getElementById("toastContainer");
+    let toastId = "toast_" + Math.random().toString(36).substr(2, 9);
+
+    let toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0 show" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+
+    toastContainer.innerHTML += toastHtml;
+
+    setTimeout(() => {
+        let toastElement = document.getElementById(toastId);
+        if (toastElement) toastElement.remove();
+    }, 4000);
+}
+
+</Script>
+<script>
+    // Добавим обработчик для кнопок бана
+document.addEventListener("click", function(e) {
+  if (e.target && e.target.classList.contains("banParticipantBtn")) {
+    e.preventDefault();
+    const userId = e.target.getAttribute("data-user-id");
+    const eventId = {{ event.id }};  // либо передайте eventId другим способом
+    if (confirm("Вы действительно хотите забанить этого участника?")) {
+      fetch(`/ban_user/${eventId}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert("Пользователь забанен для участия в событии");
+          // Обновляем список участников, например, вызовом loadParticipants() если функция реализована
+          loadParticipants();
+        } else {
+          alert("Ошибка: " + data.message);
+        }
+      })
+      .catch(error => console.error("Ошибка при блокировке пользователя:", error));
+    }
+  }
+});
+
+</script>
+
+<Script>
+
+// ✅ Функция вступления в ивент
+function joinEvent(eventId) {
+    fetch(`/join_event/${eventId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("joinBtn").classList.add("d-none");
+            document.getElementById("leaveBtn").classList.remove("d-none");
+            setTimeout(loadParticipants, 500);
+        } else if (data.message.includes("Ваш рейтинг ниже")) {
+            showToast("⛔ Вам не хватает рейтинга для участия!", "danger");
+        }
+    })
+    .catch(error => console.error("Ошибка при вступлении:", error));
+}
+
+// ✅ Функция выхода из ивента
+function leaveEvent(eventId) {
+    fetch(`/leave_event/${eventId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("joinBtn").classList.remove("d-none");
+            document.getElementById("leaveBtn").classList.add("d-none");
+            setTimeout(loadParticipants, 500);
+        }
+    })
+    .catch(error => console.error("Ошибка при выходе:", error));
+}
+
+</Script>
+{% endblock %}

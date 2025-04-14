@@ -1,0 +1,73 @@
+{% extends "moderator_base.html" %}
+
+{% block title %}Объявления{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>📢 Объявления</h2>
+
+    {% if announcements %}
+        <div class="row">
+            {% for announcement in announcements %}
+            <div class="col-md-6 mb-4">
+                <a href="{{ url_for('announcement_detail', announcement_id=announcement.id) }}" class="text-decoration-none">
+                    <div class="card announcement-card shadow-sm">
+                        {% if announcement.image %}
+                            <img src="{{ url_for('static', filename='uploads/announcements/' + announcement.image.split('/')[-1]) }}"
+                                 class="card-img-top"
+                                 alt="{{ announcement.title }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ announcement.title }}
+                                {% if announcement.is_active %}
+                                    <span class="badge bg-success">Активно</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Неактивно</span>
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">{{ announcement.description[:100] }}...</p>
+                            <p class="text-muted">🕒 Действительно до: {{ announcement.expiry_date.strftime('%d.%m.%Y') }}</p>
+                            <p class="text-muted">👤 Опубликовал: {{ announcement.user.username }}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">Нет активных объявлений.</p>
+    {% endif %}
+</div>
+
+<style>
+/* Добавляем эффект наведения на карточку */
+.announcement-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.announcement-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-status-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let announcementId = this.getAttribute("data-announcement-id");
+            fetch(`/toggle_announcement_status/${announcementId}`, { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Перезагружаем страницу для обновления статуса
+                } else {
+                    alert("❌ Ошибка: " + data.message);
+                }
+            })
+            .catch(error => console.error("Ошибка:", error));
+        });
+    });
+});
+</script>
+{% endblock %}
+

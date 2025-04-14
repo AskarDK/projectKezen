@@ -1,0 +1,66 @@
+{% extends "moderator_base.html" %}
+
+{% block title %}Создать объявление{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">📢 Создать объявление</h2>
+
+    <form id="announcementForm" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="announcementTitle" class="form-label">Заголовок</label>
+            <input type="text" class="form-control" id="announcementTitle" name="title" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="announcementType" class="form-label">Тип объявления</label>
+            <select class="form-select" id="announcementType" name="type">
+                <option value="news">📰 Новости</option>
+                <option value="important">⚠️ Важно</option>
+                <option value="event">📅 События</option>
+                <option value="ad">📢 Реклама</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="announcementDescription" class="form-label">Описание</label>
+            <textarea class="form-control" id="announcementDescription" name="description" rows="4" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="announcementImage" class="form-label">Изображение (опционально)</label>
+            <input type="file" class="form-control" id="announcementImage" name="image">
+        </div>
+
+        <div class="mb-3">
+            <label for="announcementExpiry" class="form-label">Дата окончания</label>
+            <input type="date" class="form-control" id="announcementExpiry" name="expiry_date" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">📢 Опубликовать</button>
+    </form>
+</div>
+
+<script>
+document.getElementById("announcementForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch("/create_announcement", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Объявление опубликовано!");
+            window.location.href = "/announcements";
+        } else {
+            alert("❌ Ошибка: " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка:", error));
+});
+</script>
+{% endblock %}

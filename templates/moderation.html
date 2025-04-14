@@ -1,0 +1,142 @@
+{% extends "moderator_base.html" %}
+
+{% block title %}Модерация{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Заявки на ивенты (на модерации)</h2>
+
+    {% if events %}
+        <ul class="list-group mt-3">
+            {% for event in events %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="event-title" data-id="{{ event.id }}" style="cursor: pointer; color: blue;">
+                            {{ event.title }}
+                        </h5>
+                        <p class="text-muted">{{ event.description[:100] }}...</p>
+                        <p><strong>Создатель:</strong> {{ event.creator_user.username }}</p>
+                        <p><strong>Дата создания:</strong> {{ event.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm approve-btn" data-id="{{ event.id }}">✅ Утвердить</button>
+                        <button class="btn btn-danger btn-sm reject-btn" data-id="{{ event.id }}">❌ Отклонить</button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">Нет ивентов на модерации</p>
+    {% endif %}
+</div>
+
+<!-- ✅ Модальное окно -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Детали события</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <img id="eventImage" class="img-fluid rounded mb-3" alt="Изображение события">
+                <h3 id="eventTitle"></h3>
+                <p id="eventDescription"></p>
+                <p><strong>📍 Локация:</strong> <span id="eventLocation"></span></p>
+                <p><strong>📅 Дата:</strong> <span id="eventDate"></span></p>
+                <p><strong>⏰ Время:</strong> <span id="eventTime"></span></p>
+                <p><strong>👤 Создатель:</strong> <span id="eventCreator"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="approveEvent">✅ Утвердить</button>
+                <button class="btn btn-danger" id="rejectEvent">❌ Отклонить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll(".event-title").forEach(title => {
+    title.addEventListener("click", function() {
+        let eventId = this.getAttribute("data-id");
+
+        // Загружаем данные через API
+        fetch(`/get_event/${eventId}`)
+            .then(response => response.json())
+            .then(event => {
+                document.getElementById("eventTitle").textContent = event.title;
+                document.getElementById("eventDescription").textContent = event.description;
+                document.getElementById("eventLocation").textContent = event.location;
+                document.getElementById("eventDate").textContent = event.date;
+                document.getElementById("eventTime").textContent = event.time;
+                document.getElementById("eventCreator").textContent = event.creator;
+
+                if (event.image) {
+                    document.getElementById("eventImage").src = event.image;
+                    document.getElementById("eventImage").style.display = "block";
+                } else {
+                    document.getElementById("eventImage").style.display = "none";
+                }
+
+                // Устанавливаем ID ивента для кнопок
+                document.getElementById("approveEvent").setAttribute("data-id", event.id);
+                document.getElementById("rejectEvent").setAttribute("data-id", event.id);
+
+                // Показываем модальное окно
+                let eventModal = new bootstrap.Modal(document.getElementById("eventModal"));
+                eventModal.show();
+            });
+    });
+});
+
+document.getElementById("approveEvent").addEventListener("click", function() {
+    let eventId = this.getAttribute("data-id");
+    fetch(`/approve_event/${eventId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+});
+
+document.getElementById("rejectEvent").addEventListener("click", function() {
+    let eventId = this.getAttribute("data-id");
+    fetch(`/reject_event/${eventId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+});
+</script>
+<script>
+// ✅ Подтверждение ивента из списка (вне модалки)
+document.querySelectorAll(".approve-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        let eventId = this.getAttribute("data-id");
+        fetch(`/approve_event/${eventId}`, { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    });
+});
+
+// ✅ Отклонение ивента из списка (вне модалки)
+document.querySelectorAll(".reject-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        let eventId = this.getAttribute("data-id");
+        fetch(`/reject_event/${eventId}`, { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            });
+    });
+});
+</script>
+
+
+{% endblock %}

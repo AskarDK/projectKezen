@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ announcement.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-3">{{ announcement.title }}</h2>
+
+    <div class="text-muted mb-3">
+        🕒 Действительно до: <strong>{{ announcement.expiry_date.strftime('%d.%m.%Y') }}</strong>
+    </div>
+
+    {% if announcement.image %}
+        <img src="{{ url_for('static', filename='uploads/announcements/' + announcement.image.split('/')[-1]) }}"
+             class="img-fluid rounded shadow-sm d-block mx-auto mb-4"
+             alt="{{ announcement.title }}"
+             style="max-height: 400px; object-fit: cover;">
+    {% endif %}
+
+    <p class="lead">{{ announcement.description }}</p>
+
+
+</div>
+{% endblock %}

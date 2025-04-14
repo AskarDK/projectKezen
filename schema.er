@@ -1,0 +1,182 @@
+!graph
+{
+    rankdir = LR;
+    splines = ortho;
+    nodesep = 1.0;
+    ranksep = 1.5;
+}
+
+!tables
+users {
+    id integer [pk]
+    name varchar
+}
+
+events {
+    id integer [pk]
+    user_id integer [ref: > users.id]
+    title varchar
+}
+
+[admin_chat_message]
+    *id {label:"INTEGER"}
+    event_id {label:"INTEGER"}
+    text {label:"TEXT"}
+    timestamp {label:"DATETIME"}
+    user_id {label:"INTEGER"}
+[event]
+    *id {label:"INTEGER"}
+    admins {label:"TEXT(300)"}
+    chat_id {label:"INTEGER"}
+    city_id {label:"INTEGER"}
+    coordinates {label:"TEXT(50)"}
+    created_at {label:"DATE"}
+    creator {label:"INTEGER"}
+    date {label:"DATE"}
+    description {label:"TEXT"}
+    image {label:"TEXT(300)"}
+    is_active {label:"BOOLEAN"}
+    keywords {label:"TEXT(300)"}
+    likes {label:"INTEGER"}
+    location {label:"TEXT(200)"}
+    rating {label:"FLOAT"}
+    required_rating {label:"FLOAT"}
+    status {label:"TEXT(20)"}
+    time {label:"TEXT(20)"}
+    title {label:"TEXT(200)"}
+    user_limit {label:"INTEGER"}
+    users {label:"TEXT(300)"}
+[user]
+    *id {label:"INTEGER"}
+    birth_date {label:"TEXT(10)"}
+    city {label:"TEXT(100)"}
+    email {label:"TEXT(150)"}
+    first_name {label:"TEXT(100)"}
+    is_moderator {label:"NUMERIC"}
+    last_name {label:"TEXT(100)"}
+    organizer_rating {label:"FLOAT"}
+    participant_rating {label:"FLOAT"}
+    password_hash {label:"TEXT(256)"}
+    phone {label:"TEXT(20)"}
+    profile_picture {label:"TEXT"}
+    username {label:"TEXT(100)"}
+[city]
+    *id {label:"INTEGER"}
+    name {label:"VARCHAR(100)"}
+[announcement]
+    *id {label:"INTEGER"}
+    clicks {label:"INTEGER"}
+    created_at {label:"DATETIME"}
+    description {label:"TEXT"}
+    expiry_date {label:"DATE"}
+    image {label:"TEXT(255)"}
+    is_active {label:"BOOLEAN"}
+    title {label:"TEXT(255)"}
+    type {label:"TEXT(50)"}
+    user_id {label:"INTEGER"}
+    views {label:"INTEGER"}
+[announcement_stats]
+    *id {label:"INTEGER"}
+    announcement_id {label:"INTEGER"}
+    clicks {label:"INTEGER"}
+    date {label:"DATE"}
+    views {label:"INTEGER"}
+[comment]
+    *id {label:"INTEGER"}
+    created_at {label:"DATETIME"}
+    event_id {label:"INTEGER"}
+    text {label:"TEXT"}
+    user_id {label:"INTEGER"}
+[event_action]
+    *id {label:"INTEGER"}
+    action_type {label:"VARCHAR(20)"}
+    event_id {label:"INTEGER"}
+    timestamp {label:"DATETIME"}
+    user_id {label:"INTEGER"}
+[event_message]
+    *id {label:"INTEGER"}
+    event_id {label:"INTEGER"}
+    sender_id {label:"INTEGER"}
+    text {label:"TEXT"}
+    timestamp {label:"DATETIME"}
+[event_review]
+    *id {label:"INTEGER"}
+    event_id {label:"INTEGER"}
+    rating {label:"INTEGER"}
+    text {label:"TEXT"}
+    timestamp {label:"DATETIME"}
+    user_id {label:"INTEGER"}
+[event_users]
+    *event_id {label:"INTEGER"}
+    *user_id {label:"INTEGER"}
+[friend_request]
+    *id {label:"INTEGER"}
+    receiver_id {label:"INTEGER"}
+    sender_id {label:"INTEGER"}
+    status {label:"VARCHAR(20)"}
+[friendship]
+    friend_id {label:"INTEGER"}
+    user_id {label:"INTEGER"}
+[interest]
+    *id {label:"INTEGER"}
+    name {label:"VARCHAR(100)"}
+    parent_id {label:"INTEGER"}
+[message]
+    *id {label:"INTEGER"}
+    receiver_id {label:"INTEGER"}
+    sender_id {label:"INTEGER"}
+    text {label:"TEXT"}
+    timestamp {label:"DATETIME"}
+[notification]
+    *id {label:"INTEGER"}
+    action_type {label:"VARCHAR(50)"}
+    event_id {label:"INTEGER"}
+    is_read {label:"BOOLEAN"}
+    message {label:"VARCHAR(255)"}
+    sender_id {label:"INTEGER"}
+    timestamp {label:"DATETIME"}
+    user_id {label:"INTEGER"}
+[related_interest]
+    *id {label:"INTEGER"}
+    interest_id {label:"INTEGER"}
+    related_id {label:"INTEGER"}
+[user_interest]
+    *id {label:"INTEGER"}
+    interest_id {label:"INTEGER"}
+    user_id {label:"INTEGER"}
+[user_like]
+    *id {label:"INTEGER"}
+    event_id {label:"INTEGER"}
+    user_id {label:"INTEGER"}
+user."id" 1--* admin_chat_message."user_id"
+event."id" 1--* admin_chat_message."event_id"
+city."id" ?--* event."city_id"
+user."id" 1--* event."creator"
+user."id" 1--* announcement."user_id"
+announcement."id" 1--* announcement_stats."announcement_id"
+event."id" 1--* comment."event_id"
+user."id" 1--* comment."user_id"
+event."id" 1--* event_action."event_id"
+user."id" 1--* event_action."user_id"
+user."id" 1--* event_message."sender_id"
+event."id" 1--* event_message."event_id"
+user."id" 1--* event_review."user_id"
+event."id" 1--* event_review."event_id"
+event."id" 1--* event_users."event_id"
+user."id" 1--* event_users."user_id"
+user."id" 1--* friend_request."receiver_id"
+user."id" 1--* friend_request."sender_id"
+user."id" ?--1 friendship."friend_id"
+user."id" ?--1 friendship."user_id"
+interest."id" ?--* interest."parent_id"
+user."id" 1--* message."receiver_id"
+user."id" 1--* message."sender_id"
+event."id" ?--* notification."event_id"
+user."id" ?--* notification."sender_id"
+user."id" 1--* notification."user_id"
+interest."id" 1--* related_interest."related_id"
+interest."id" 1--* related_interest."interest_id"
+interest."id" 1--* user_interest."interest_id"
+user."id" 1--* user_interest."user_id"
+user."id" 1--* user_like."user_id"
+event."id" 1--* user_like."event_id"

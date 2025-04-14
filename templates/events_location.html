@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Ивенты рядом{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">📍 Ивенты рядом</h2>
+
+    <!-- Карта -->
+    <div id="eventsMap" style="width: 100%; height: 500px; border-radius: 10px;"></div>
+
+    <!-- Модальное окно для списка ивентов в кластере -->
+    <div id="eventListModal" class="modal fade" tabindex="-1" aria-labelledby="eventListLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventListLabel">📍 События в этом районе</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul id="eventList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключение API Яндекс.Карт -->
+<script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU"></script>
+
+<script>
+    function initMap() {
+    var myMap = new ymaps.Map("eventsMap", {
+        center: [43.238949, 76.889709], // Алматы (по умолчанию)
+        zoom: 12,
+        controls: ['zoomControl']
+    });
+
+    var clusterer = new ymaps.Clusterer({
+        preset: 'islands#invertedBlueClusterIcons',
+        groupByCoordinates: false,
+        clusterDisableClickZoom: true,
+        clusterOpenBalloonOnClick: false
+    });
+
+    var events = {{ events|tojson|safe }};
+    var placemarks = [];
+    var eventMap = new Map();
+
+    events.forEach(event => {
+        if (event.coordinates) {
+            let coords = event.coordinates.split(',').map(Number);
+            let eventId = event.id;
+
+            let key = coords.toString();
+            if (!eventMap.has(key)) {
+                eventMap.set(key, []);
+            }
+            eventMap.get(key).push(event);
+
+            // ✅ Балун с информацией об ивенте
+            let balloonContent = `
+                <div style="text-align:center;">
+                    <img src="${event.image}" alt="${event.title}" style="width:100%; height:150px; object-fit:cover; border-radius:8px;">
+                    <h5 style="margin-top:10px;">${event.title}</h5>
+                    <p>📅 ${event.date} 🕒 ${event.time}</p>
+                    <p>📍 ${event.location}</p>
+                    <a href="/event/${event.id}" class="btn btn-primary btn-sm">Подробнее</a>
+                </div>
+            `;
+
+            let eventPlacemark = new ymaps.Placemark(coords, {
+                eventData: event,
+                balloonContent: balloonContent
+            }, {
+                iconLayout: 'default#imageWithContent',
+                iconImageHref: '',
+                iconImageSize: [55, 55],
+                iconImageOffset: [-27, -27],
+                iconContentLayout: ymaps.templateLayoutFactory.createClass(`
+                    <div style="
+                        width: 55px;
+                        height: 55px;
+                        border-radius: 50%;
+                        overflow: hidden;
+                        position: relative;
+                        border: 3px solid black;
+                        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+                        cursor: pointer;
+                        transition: transform 0.2s ease-in-out;
+                    ">
+                        <img src="$[properties.eventData.image]" alt="$[properties.eventData.title]" style="
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                        ">
+                        <div style="
+                            position: absolute;
+                            bottom: -10px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: rgba(255, 165, 0, 0.9);
+                            color: white;
+                            font-size: 14px;
+                            font-weight: bold;
+                            padding: 4px 7px;
+                            border-radius: 15px;
+                            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+                        ">
+                            🎫
+                        </div>
+                    </div>
+                `)
+            });
+
+            // ✅ Клик по маркеру теперь открывает балун с информацией
+            eventPlacemark.events.add('click', function (e) {
+                let targetPlacemark = e.get('target');
+                if (!targetPlacemark.balloon.isOpen()) {
+                    targetPlacemark.balloon.open();
+                }
+            });
+
+            placemarks.push(eventPlacemark);
+            clusterer.add(eventPlacemark);
+        }
+    });
+
+    myMap.geoObjects.add(clusterer);
+
+    // ✅ Кластер теперь открывает список событий
+    clusterer.events.add('click', function (e) {
+        var cluster = e.get('target');
+        var clusterEvents = cluster.getGeoObjects();
+
+        let eventList = document.getElementById("eventList");
+        eventList.innerHTML = "";
+
+        let uniqueEvents = new Set();
+
+        clusterEvents.forEach(eventPlacemark => {
+            let eventData = eventPlacemark.properties.get("eventData");
+
+            if (eventData && !uniqueEvents.has(eventData.id)) {
+                uniqueEvents.add(eventData.id);
+
+                let listItem = document.createElement("li");
+                listItem.classList.add("list-group-item", "d-flex", "align-items-center");
+                listItem.innerHTML = `
+                    <img src="${eventData.image}" alt="${eventData.title}" class="me-3" style="width:50px; height:50px; border-radius:5px;">
+                    <div>
+                        <strong>${eventData.title}</strong>
+                        <p class="mb-0">📅 ${eventData.date} 🕒 ${eventData.time}</p>
+                        <p class="mb-0">📍 ${eventData.location}</p>
+                    </div>
+                `;
+
+                listItem.addEventListener("click", function () {
+                    window.location.href = `/event/${eventData.id}`;
+                });
+
+                eventList.appendChild(listItem);
+            }
+        });
+
+        let modal = new bootstrap.Modal(document.getElementById("eventListModal"));
+        modal.show();
+    });
+
+    myMap.container.fitToViewport();
+}
+
+ymaps.ready(initMap);
+
+</script>
+
+{% endblock %}

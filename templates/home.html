@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .scroll-wrapper {
+  overflow: hidden;
+  position: relative;
+}
+
+.event-scroller {
+  display: flex;
+  gap: 1rem;
+  animation: scroll-events 60s linear infinite;
+  will-change: transform;
+}
+
+.event-card {
+  min-width: 250px;
+  max-width: 250px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  padding: 1rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.event-img-top {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+@keyframes scroll-events {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Останавливаем при наведении */
+.event-scroller:hover {
+  animation-play-state: paused;
+}
+
+    </style>
+        <style>
+           /* ========== ЛАЙКИ ========== */
+.like-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease, color 0.3s ease, opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.like-btn i.fa-heart {
+    color: gray !important;
+}
+
+
+.like-btn.liked i.fa-heart {
+    color: red !important;
+    transform: scale(1.2);
+}
+
+
+
+
+.like-btn:hover .fa-heart {
+    opacity: 0.6;
+}
+
+/* ========== ИЗОБРАЖЕНИЯ СОБЫТИЙ ========== */
+.event-img {
+    width: 80%; /* Ширина 80% от контейнера */
+    height: 300px; /* Фиксированная высота */
+    object-fit: cover; /* Сохранение пропорций */
+    border-radius: 8px; /* Закругленные углы */
+    display: block;
+    margin: 0 auto; /* Центрирование */
+}
+
+/* ========== КНОПКА ПОДДЕРЖКИ ========== */
+.support-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.support-button:hover {
+    transform: scale(1.1);
+}
+
+/* ========== ЧАТ ПОДДЕРЖКИ ========== */
+.support-chat {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 320px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.support-header {
+    background: #dc3545;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.support-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.support-footer {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.support-footer input {
+    flex: 1;
+    margin-right: 5px;
+}
+
+/* ========== СООБЩЕНИЯ В ЧАТЕ ========== */
+.user-message-container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.user-message {
+    background: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 15px;
+    margin: 5px 0;
+    max-width: 70%;
+    text-align: left;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    display: inline-block;
+}
+
+.system-message {
+    background: #f1f1f1;
+    color: black;
+    padding: 8px 12px;
+    border-radius: 15px;
+    margin: 5px 0;
+    max-width: 70%;
+    text-align: left;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    display: inline-block;
+}
+
+/* ========== УВЕДОМЛЕНИЯ ========== */
+#notificationDropdown {
+    position: absolute;
+    top: 100%; /* сразу под кнопкой */
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border-radius: 10px;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1050;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Отображение списка уведомлений */
+.show-dropdown {
+    display: block !important;
+}
+
+.notification-item {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    transition: background 0.3s;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.notification-text {
+    flex-grow: 1;
+    font-size: 14px;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: gray;
+}
+
+/* КНОПКИ В ЗАЯВКЕ В ДРУЗЬЯ */
+.friend-request-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.friend-request-buttons button {
+    border: none;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.2s;
+}
+
+.accept-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.decline-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.friend-request-buttons button:hover {
+    opacity: 0.8;
+}
+
+/* ========== КНОПКА ОСТАВИТЬ ОТЗЫВ ========== */
+.leave-review {
+    background-color: #ffc107;
+    color: black;
+    border: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.2s;
+}
+
+.leave-review:hover {
+    background-color: #e0a800;
+}
+
+/* ========== МОДАЛЬНОЕ ОКНО ОТЗЫВА ========== */
+#reviewModal {
+    display: none; /* ГАРАНТИРОВАННО СКРЫТО */
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Контент модального окна */
+#reviewModal .modal-content {
+    background: white;
+    padding: 20px;
+    width: 400px;
+    max-width: 90%;
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Заголовок */
+#reviewModal h2 {
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* Кнопка закрытия */
+#closeReviewModal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    transition: 0.3s;
+}
+
+#closeReviewModal:hover {
+    color: black;
+}
+
+/* Поля ввода */
+#reviewText {
+    width: 100%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Выбор рейтинга */
+#reviewRating {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Кнопка отправки */
+#submitReview {
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+
+#submitReview:hover {
+    background-color: #0056b3;
+}
+
+a {
+    color: black;
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: #333;
+}
+
+      .announcement-img {
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.carousel-inner {
+    border-radius: 10px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+}
+
+
+
+        </style>
+    <style>
+:root {
+  --bg-color: #f9f9fb;
+  --card-bg: #ffffff;
+  --text-color: #1e1e1e;
+  --muted-text: #6c757d;
+  --primary: #4a7efc;
+  --danger: #ff4d4f;
+  --radius: 14px;
+  --transition: 0.25s ease-in-out;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --gradient: linear-gradient(135deg, #6c63ff, #48c6ef);
+}
+
+/* ✅ БАЗА */
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ✅ КАРТОЧКИ */
+.card {
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* ✅ ЗАГОЛОВКИ */
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+/* ✅ КНОПКИ */
+.btn {
+  border-radius: var(--radius);
+  font-weight: 500;
+  padding: 0.5rem 1.2rem;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.btn-primary {
+  background: var(--gradient);
+  border: none;
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: scale(1.03);
+  background: linear-gradient(135deg, #5a52ff, #33b6ef);
+}
+
+.btn-outline-primary {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+  transform: scale(1.03);
+}
+
+/* ✅ НАВИГАЦИЯ */
+.navbar {
+  background-color: white !important;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+/* ✅ ФОРМЫ */
+.form-control, .form-select {
+  border-radius: var(--radius);
+  border: 1px solid #dcdcdc;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(74, 126, 252, 0.2);
+}
+
+/* ✅ ГРАДИЕНТ ДЛЯ ХЕДЕРОВ И БЛОКОВ */
+.section-header,
+.gradient-header {
+  background: var(--gradient);
+  color: white;
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+/* ✅ ССЫЛКИ */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ✅ ПЛАВНОСТЬ */
+* {
+  transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+}
+
+/* ✅ АДАПТИВНОСТЬ */
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 1.1rem;
+  }
+  .card-title {
+    font-size: 1rem;
+  }
+}
+
+/* ✅ СКРОЛЛБАР */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+        /* Убираем hover-анимации у карточек */
+.card {
+  transition: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); /* лёгкая тень оставляем */
+}
+.card:hover {
+  transform: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Убираем hover-эффекты у панели фильтров */
+.card.p-3.shadow-sm {
+  transition: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+.card.p-3.shadow-sm:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+.notification-new {
+    background-color: #f2f2f2;
+}
+/* Все уведомления — чёрный текст */
+.notification-item .notification-text {
+    color: #000 !important;
+}
+
+/* Время — чуть светлее */
+.notification-item .notification-time {
+    color: #555 !important;
+}
+
+/* Непрочитанные — выделяем фоном */
+.notification-new {
+    background-color: #f2f2f2;
+}
+
+
+/* Убираем hover-анимации у рекламных карточек (carousel) */
+.carousel-item .card {
+  transition: none !important;
+}
+.carousel-item .card:hover {
+  transform: none !important;
+}
+
+/* Отключаем у модальных окон */
+.modal-content {
+  transition: none !important;
+}
+
+        /* Кнопки — оставляем анимации */
+.btn {
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+.btn:hover {
+  transform: scale(1.03);
+}
+
+/* Анимация для лайка */
+.like-btn {
+  transition: transform 0.2s ease, color 0.3s ease, opacity 0.3s ease;
+}
+.like-btn i.fa-heart {
+  color: gray !important;
+}
+.like-btn.liked i.fa-heart {
+  color: red !important;
+  transform: scale(1.2);
+}
+.like-btn:hover .fa-heart {
+  opacity: 0.6;
+}
+
+</style>
+<style>
+.skeleton {
+  background: #e0e0e0;
+  border-radius: 6px;
+  min-height: 16px;
+  animation: pulse 1.5s infinite;
+}
+.skeleton.image {
+  height: 300px;
+  width: 100%;
+  border-radius: 12px;
+}
+.skeleton.text {
+  width: 100%;
+  height: 18px;
+  margin-bottom: 8px;
+}
+@keyframes pulse {
+  0% { background-color: #e0e0e0; }
+  50% { background-color: #f0f0f0; }
+  100% { background-color: #e0e0e0; }
+}
+</style>
+
+    <style>
+           @media (max-width: 767.98px) {
+  .navbar .navbar-collapse {
+    background-color: white;
+    padding: 1rem;
+  }
+
+  .navbar .form-select,
+  .navbar .form-control,
+  .navbar .btn {
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .navbar .dropdown,
+  .navbar .d-flex {
+    width: 100%;
+    text-align: center;
+  }
+
+  .navbar .dropdown-toggle {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .navbar .dropdown-menu {
+    width: 100%;
+  }
+}
+@media (max-width: 576px) {
+  #notificationDropdown {
+    position: fixed !important;
+    top: 60px !important;
+    right: 10px !important;
+    width: 90% !important;
+    max-height: 70vh !important;
+    border-radius: 12px;
+    z-index: 1050;
+  }
+}
+#notificationBtn {
+  position: relative;
+  z-index: 1100;
+}
+.dropdown-menu.show-dropdown {
+  display: block;
+  position: absolute;
+}
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm fixed-top">
+  <div class="container-fluid">
+    <!-- Логотип -->
+    <a class="navbar-brand fw-bold text-dark" href="{{ url_for('home') }}">KEZEN</a>
+
+    <!-- Бургер -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Контент навигации -->
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <div class="ms-auto d-flex flex-column flex-lg-row align-items-center gap-2">
+
+        <!-- Выбор города -->
+        <form method="GET" action="{{ url_for('home') }}">
+          <select name="city_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Все города</option>
+            {% for city in cities %}
+              <option value="{{ city.id }}" {% if selected_city_id == city.id %}selected{% endif %}>{{ city.name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+
+        <!-- Модераторские кнопки -->
+        {% if current_user.is_moderator %}
+          <a href="{{ url_for('create_announcement') }}" class="btn btn-sm btn-warning">📢 Объявление</a>
+          <a href="{{ url_for('announcements') }}" class="btn btn-sm btn-warning">Управление</a>
+          <a href="{{ url_for('moderation_events') }}" class="btn btn-sm btn-outline-primary">Все ивенты</a>
+          <a href="{{ url_for('moderation_panel') }}" class="btn btn-sm btn-outline-primary">🛠 Модерация</a>
+        {% endif %}
+
+        <!-- Поиск -->
+        <form method="GET" action="{{ url_for('home') }}" class="d-flex">
+          <input class="form-control form-control-sm me-1" type="search" name="search" placeholder="Поиск" value="{{ search_query }}">
+          <button class="btn btn-sm btn-danger" type="submit">🔍</button>
+        </form>
+
+        <!-- Ивенты рядом -->
+        <a href="{{ url_for('events_location') }}" class="btn btn-sm btn-outline-primary">📍 Рядом</a>
+
+        <!-- Уведомления -->
+      <div class="position-relative">
+  <button id="notificationBtn" class="btn btn-sm btn-light position-relative">
+    🔔
+    <span id="notificationCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill d-none">0</span>
+  </button>
+  <div id="notificationDropdown" class="shadow">
+    <div class="dropdown-header text-center fw-bold">Уведомления</div>
+    <div id="newNotifications" class="list-group">
+      <small class="text-muted px-3">Новые</small>
+    </div>
+    <div id="readNotifications" class="list-group mt-2">
+      <small class="text-muted px-3">Прочитанные</small>
+    </div>
+    <div class="text-center p-2">
+      <button id="markAllRead" class="btn btn-sm btn-outline-secondary">Отметить все как прочитанные</button>
+    </div>
+  </div>
+</div>
+
+
+        <!-- Профиль -->
+        <div class="dropdown">
+          <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown">
+            <img src="{% if current_user.profile_picture %}{{ url_for('uploaded_file', filename=current_user.profile_picture.split('/')[-1]) }}{% else %}https://via.placeholder.com/40{% endif %}"
+                 alt="Avatar" class="rounded-circle me-2" width="32" height="32">
+            <span class="fw-bold">{{ current_user.username }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('profile', user_id=current_user.id) }}"><i class="fa-solid fa-user me-2"></i>Профиль</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i>Выйти</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div style="height: 70px;"></div>
+
+
+
+
+<div id="announcementCarousel" class="carousel slide mt-4" data-bs-ride="carousel">
+    <div class="carousel-inner">
+        {% for announcement in announcements %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="card shadow-sm">
+                <a href="{{ url_for('announcement_detail_user', announcement_id=announcement.id) }}"
+                   onclick="registerClick({{ announcement.id }})"
+                   class="text-decoration-none">
+                    {% if announcement.image %}
+                        <img src="{{ url_for('static', filename='uploads/announcements/' + announcement.image.split('/')[-1]) }}"
+                             class="d-block w-100 rounded"
+                             alt="{{ announcement.title }}"
+                             style="max-height: 250px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ announcement.title }}</h5>
+                        <p class="card-text text-muted">{{ announcement.description[:100] }}...</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Кнопки управления слайдером -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#announcementCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Предыдущий</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#announcementCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Следующий</span>
+    </button>
+</div>
+
+
+<!-- Основной контейнер -->
+<div class="container-fluid mt-4">
+    <div class="row">
+
+    <!-- ✅ Кнопка для отображения фильтров на мобильных -->
+<div class="d-md-none mb-3 text-end">
+    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileFilters" aria-controls="mobileFilters">
+        🔍 Фильтры
+    </button>
+</div>
+
+<!-- ✅ Левая панель (Фильтры) — отображается только на ≥ md -->
+<div class="col-md-3 d-none d-md-block">
+    <div class="card p-3 shadow-sm">
+        <h5>Фильтры</h5>
+        <form method="GET" action="{{ url_for('home') }}">
+
+            <h6>Категории</h6>
+            <div id="interestFilters">
+                <p>Загрузка...</p>
+            </div>
+
+            <h6 class="mt-3">Выбор даты</h6>
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button type="button" class="btn btn-outline-secondary" onclick="changeMonth(-1)">←</button>
+                    <span id="currentMonthYear"></span>
+                    <button type="button" class="btn btn-outline-secondary" onclick="changeMonth(1)">→</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+                </div>
+                <div id="calendarDays" class="calendar-grid"></div>
+                <input type="hidden" id="selectedDate" name="date" value="{{ selected_date_display }}">
+            </div>
+
+            <h6 class="mt-3">Местоположение (Алматы)</h6>
+            <select class="form-select" name="location">
+                <option value="">Выберите район</option>
+                {% for district in ["Алмалинский", "Ауэзовский", "Бостандыкский", "Жетысуский", "Медеуский", "Наурызбайский", "Турксибский"] %}
+                    <option value="{{ district }}" {% if selected_location == district %}selected{% endif %}>{{ district }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="btn btn-primary w-100 mt-3" type="submit">Применить</button>
+        </form>
+    </div>
+</div>
+
+<!-- ✅ Offcanvas фильтры для мобильных -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileFilters" aria-labelledby="mobileFiltersLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="mobileFiltersLabel">Фильтры</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form method="GET" action="{{ url_for('home') }}">
+        <h6>Категории</h6>
+        <div id="interestFiltersMobile">
+            <p>Загрузка...</p>
+        </div>
+
+        <h6 class="mt-3">Выбор даты</h6>
+        <input type="date" class="form-control" name="date" value="{{ selected_date_display }}">
+
+        <h6 class="mt-3">Местоположение (Алматы)</h6>
+        <select class="form-select" name="location">
+            <option value="">Выберите район</option>
+            {% for district in ["Алмалинский", "Ауэзовский", "Бостандыкский", "Жетысуский", "Медеуский", "Наурызбайский", "Турксибский"] %}
+                <option value="{{ district }}" {% if selected_location == district %}selected{% endif %}>{{ district }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn btn-primary w-100 mt-3" type="submit">Применить</button>
+    </form>
+  </div>
+</div>
+
+        <!-- Центральная колонка с событиями -->
+        <div class="col-md-9">
+
+            <h3 class="mb-3">События</h3>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createEventModal">
+        <i class="fa-solid fa-plus"></i> Создать событие
+    </button>
+
+                <!-- Блок с выбранными фильтрами -->
+<div id="appliedFiltersContainer" class="mb-3 d-none">
+    <span class="fw-bold">По категориям:</span>
+    <span id="appliedFilters" class="text-primary"></span>
+    <button id="resetFiltersBtn" class="btn btn-sm btn-outline-danger ms-2">Сброс</button>
+</div>
+
+</div>
+            {% if not events %}
+<div id="skeletonContainer">
+    {% for _ in range(3) %}
+    <div class="card mb-4 p-3">
+        <div class="skeleton image mb-3"></div>
+        <div class="skeleton text" style="width: 60%"></div>
+        <div class="skeleton text" style="width: 80%"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+            {% for event in events %}
+            <div class="card mb-4 shadow-sm">
+
+                <div class="card-header d-flex align-items-center">
+    <img src="{{ event.creator_user.profile_picture or 'https://via.placeholder.com/50' }}"
+         alt="{{ event.creator_user.username }}" class="rounded-circle me-2" width="50" height="50">
+
+    <a href="{{ url_for('profile', user_id=event.creator_user.id) }}"
+       class="text-decoration-none fw-bold">
+        {{ event.creator_user.username }}
+    </a>
+
+
+</div>
+
+
+                <a href="{{ url_for('event_detail', event_id=event.id) }}" class="event-link text-decoration-none text-dark">
+                    <div class="card-body">
+                        {% if event.image %}
+<img src="{{ event.image }}" class="card-img-top event-img mb-3" alt="{{ event.title }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/400" class="card-img-top event-img mb-3" alt="Нет изображения">
+                        {% endif %}
+
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">{{ event.description }}</p>
+
+                        <div class="d-flex justify-content-between text-muted">
+                            <span>{{ event.date }} в {{ event.time }}</span>
+                            <span>{{ event.location }}</span>
+                        </div>
+                    </div>
+                </a>
+
+             <div class="card-footer d-flex justify-content-between align-items-center">
+    <button class="btn like-btn {% if event.is_liked %}liked{% endif %}"
+            data-event-id="{{ event.id }}"
+            data-liked="{{ event.is_liked | lower }}">
+        <i class="fa-solid fa-heart fa-heart"></i> <span class="like-count">{{ event.likes }}</span>
+    </button>
+    <button class="btn btn-outline-secondary comment-toggle" data-event-id="{{ event.id }}">
+        💬 Комментарии
+    </button>
+</div>
+
+
+
+
+
+
+                <div class="comments-section p-3 d-none" id="comments-{{ event.id }}">
+                    <div class="comments-list">
+                        {% for comment in event.comments %}
+                        <div class="d-flex align-items-start mb-2">
+                            <img src="{{ comment.user.profile_picture or 'https://via.placeholder.com/40' }}"
+                                 alt="{{ comment.user.username }}" class="rounded-circle me-2" width="40" height="40">
+                            <div>
+                                <strong>{{ comment.user.username }}</strong>
+                                <p class="mb-0">{{ comment.text }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Форма для добавления комментариев -->
+<form class="comment-form mt-2" data-event-id="{{ event.id }}">
+    <input type="text" name="comment" class="form-control comment-input" placeholder="Написать комментарий..." required>
+    <button type="submit" class="btn btn-sm btn-primary mt-2">Отправить</button>
+</form>
+
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted">Нет событий по заданным критериям.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<button id="support-btn" class="btn btn-danger support-button">
+    <i class="fas fa-comment-alt"></i>
+</button>
+
+<!-- Модальное окно чата -->
+<div id="support-chat-modal" class="support-chat">
+    <div class="support-header">
+        <h5>Чат поддержки</h5>
+        <button class="btn-close" id="close-chat"></button>
+    </div>
+    <div class="support-body" id="chat-messages">
+        <p class="system-message">🤖 Привет! Я — чат-бот поддержки. Чем могу помочь?</p>
+    </div>
+    <div class="support-footer">
+        <input type="text" id="chat-input" class="form-control" placeholder="Введите сообщение...">
+        <button id="send-chat" class="btn btn-primary">Отправить</button>
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".comment-form").forEach(form => {
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();  // ❌ Отключаем стандартную отправку формы
+
+            let eventId = this.getAttribute("data-event-id");
+            let commentInput = this.querySelector(".comment-input");
+            let commentText = commentInput.value.trim();
+
+            if (!commentText) return;
+
+            fetch(`/add_comment/${eventId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ comment: commentText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // ✅ Создаём новый элемент комментария
+                    let commentList = document.getElementById(`comments-${eventId}`).querySelector(".comments-list");
+
+                    let commentElement = document.createElement("div");
+                    commentElement.classList.add("d-flex", "align-items-start", "mb-2");
+
+                    let avatar = data.user_avatar ? data.user_avatar : "https://via.placeholder.com/40";
+                    let username = data.username ? data.username : "Неизвестный";
+
+                    commentElement.innerHTML = `
+                        <img src="${avatar}" alt="${username}" class="rounded-circle me-2" width="40" height="40">
+                        <div>
+                            <strong>${username}</strong>
+                            <p class="mb-0">${data.comment}</p>
+                        </div>
+                    `;
+
+                    commentList.appendChild(commentElement);
+                    commentInput.value = "";  // Очистка поля ввода
+                } else {
+                    alert("❌ Ошибка: " + data.message);
+                }
+            })
+            .catch(error => console.error("Ошибка при отправке комментария:", error));
+        });
+    });
+});
+
+</script>
+
+<script>
+   document.querySelectorAll(".like-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        let eventId = this.dataset.eventId;
+        let likeCountSpan = this.querySelector(".like-count");
+        let isLiked = this.classList.contains("liked");
+
+        fetch(`/like_event/${eventId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            likeCountSpan.textContent = data.likes;
+
+            if (data.liked) {
+                this.classList.add("liked");
+            } else {
+                this.classList.remove("liked");
+            }
+        })
+        .catch(error => console.error("Ошибка при лайке:", error));
+    });
+});
+
+
+
+    document.querySelectorAll(".comment-toggle").forEach(button => {
+        button.addEventListener("click", function () {
+            let eventId = this.dataset.eventId;
+            let commentsSection = document.getElementById(`comments-${eventId}`);
+            commentsSection.classList.toggle("d-none");
+        });
+    });
+
+    let selectedDate = "{{ selected_date | default('') }}";  // Передаем выбранную дату из Flask
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    if (selectedDate) {
+        const parts = selectedDate.split(".");
+        if (parts.length === 3) {
+            selectedDate = selectedDate;
+            currentMonth = parseInt(parts[1], 10) - 1;
+            currentYear = parseInt(parts[2], 10);
+        }
+    }
+
+    function updateCalendar() {
+        const monthNames = [
+            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        ];
+
+        document.getElementById("currentMonthYear").textContent =
+            `${monthNames[currentMonth]} ${currentYear}`;
+
+        const calendarDays = document.getElementById("calendarDays");
+        calendarDays.innerHTML = "";
+
+        let firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        if (firstDay === 0) firstDay = 7; // Исправление для воскресенья
+
+        let daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+        for (let i = 1; i < firstDay; i++) {
+            let emptyDiv = document.createElement("div");
+            emptyDiv.classList.add("calendar-day", "empty");
+            calendarDays.appendChild(emptyDiv);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            let dayButton = document.createElement("div");
+            dayButton.classList.add("calendar-day");
+            dayButton.textContent = day;
+            dayButton.onclick = () => selectDate(day);
+
+            if (`${day}.${currentMonth + 1}.${currentYear}` === selectedDate) {
+                dayButton.classList.add("selected");  // Выделяем выбранную дату
+            }
+            calendarDays.appendChild(dayButton);
+        }
+    }
+
+    function selectDate(day) {
+    let newDate = `${day}.${currentMonth + 1}.${currentYear}`;
+
+    // Если дата уже выбрана, сбрасываем её
+    if (selectedDate === newDate) {
+        selectedDate = "";
+    } else {
+        selectedDate = newDate;
+    }
+
+    document.getElementById("selectedDate").value = selectedDate;
+    updateCalendar();
+}
+
+
+    function changeMonth(direction) {
+        currentMonth += direction;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        updateCalendar();
+    }
+
+
+
+    document.addEventListener("DOMContentLoaded", updateCalendar);
+</script>
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header bg-gradient text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" style="color:black" id="createEventLabel">🎉 Создание события</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="createEventForm" enctype="multipart/form-data" class="row g-4">
+
+          <!-- ✅ Секция 1: Основная информация -->
+          <div class="border-bottom pb-3">
+            <h6 class="mb-3"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Основная информация</h6>
+
+            <div class="mb-3">
+              <label for="eventTitle" class="form-label">Название события</label>
+              <input type="text" class="form-control" id="eventTitle" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="eventDescription" class="form-label">Описание</label>
+              <textarea class="form-control" id="eventDescription" rows="3" required></textarea>
+              <button type="button" class="btn btn-warning btn-sm mt-2" id="generateDescriptionBtn">⚡ Сгенерировать описание</button>
+            </div>
+
+            <div class="mb-3">
+              <label for="event_image" class="form-label">Изображение</label>
+              <input type="file" class="form-control" id="event_image" name="event_image" accept="image/*">
+              <img id="event-preview" src="/static/uploads/default_event.jpg" class="img-fluid mt-2 rounded" style="max-height: 180px;">
+            </div>
+          </div>
+
+          <!-- ✅ Секция 2: Местоположение -->
+          <div class="border-bottom pt-3 pb-3">
+            <h6 class="mb-3"><i class="fa-solid fa-location-dot me-2 text-danger"></i>Местоположение</h6>
+
+            <div class="mb-3">
+              <label for="eventLocation" class="form-label">Адрес</label>
+              <input type="text" class="form-control" id="eventLocation" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="eventCity" class="form-label">Город</label>
+              <select id="eventCity" class="form-select" required>
+                {% for city in cities %}
+                  <option value="{{ city.id }}">{{ city.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Указать на карте</label>
+              <div id="map" style="height: 250px;" class="rounded border"></div>
+              <input type="hidden" id="eventCoordinates" name="coordinates">
+            </div>
+          </div>
+
+          <!-- ✅ Секция 3: Время -->
+          <div class="border-bottom pt-3 pb-3">
+            <h6 class="mb-3"><i class="fa-solid fa-clock me-2 text-info"></i>Дата и время</h6>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="eventDate" class="form-label">Дата</label>
+                <input type="date" class="form-control" id="eventDate" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="eventTime" class="form-label">Время</label>
+                <input type="time" class="form-control" id="eventTime" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ Секция 4: Интересы -->
+          <div class="border-bottom pt-3 pb-3">
+            <h6 class="mb-3"><i class="fa-solid fa-tags me-2 text-success"></i>Тематика</h6>
+            <div id="eventInterestContainer" class="d-flex flex-wrap gap-2">
+              <p class="text-muted">Загрузка категорий...</p>
+            </div>
+          </div>
+
+          <!-- ✅ Секция 5: Дополнительно -->
+          <div class="pt-3">
+  <button class="btn btn-outline-secondary w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedOptions" aria-expanded="false" aria-controls="advancedOptions">
+    <i class="fa-solid fa-sliders me-2"></i>Дополнительные параметры (необязательно)
+  </button>
+
+  <div class="collapse" id="advancedOptions">
+    <div class="card card-body border rounded-4">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="eventRequiredRating" class="form-label">Мин. рейтинг участника (0–5)</label>
+          <input type="number" min="0" max="5" step="0.1" class="form-control" id="eventRequiredRating" name="required_rating">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="eventMaxParticipants" class="form-label">Макс. участников</label>
+          <input type="number" min="1" class="form-control" id="eventMaxParticipants" name="user_limit">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+          <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-primary w-100">Создать событие</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Правильная структура модального окна Bootstrap -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Оставить отзыв</h2>
+                <button type="button" class="btn-close" id="closeReviewModal" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewEventId">
+                <label for="reviewText">Ваш отзыв:</label>
+                <textarea id="reviewText" rows="4" class="form-control" placeholder="Введите отзыв..."></textarea>
+                <label for="reviewRating" class="mt-2">Оценка:</label>
+                <select id="reviewRating" class="form-select">
+                    <option value="5">5 - Отлично</option>
+                    <option value="4">4 - Хорошо</option>
+                    <option value="3">3 - Средне</option>
+                    <option value="2">2 - Плохо</option>
+                    <option value="1">1 - Ужасно</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button id="submitReview" class="btn btn-primary">Отправить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function loadInterestsForForm() {
+        fetch("/get_all_interests")  // Запрос на сервер
+            .then(response => response.json())
+            .then(data => {
+                let interestContainer = document.getElementById("eventInterestContainer");
+                interestContainer.innerHTML = "";  // Очищаем старые данные
+                let mobileInterestContainer = document.getElementById("interestFiltersMobile");
+mobileInterestContainer.innerHTML = "";
+
+
+                if (data.length === 0) {
+                    interestContainer.innerHTML = "<p class='text-muted'>Категории не найдены.</p>";
+                    return;
+                }
+
+                data.forEach(interest => {
+                    if (typeof interest === "object" && interest.name) {
+                        let checkbox = document.createElement("div");
+                        checkbox.classList.add("form-check", "me-3");
+
+                        checkbox.innerHTML = `
+                            <input class="form-check-input" type="checkbox" name="keywords" value="${interest.name}" id="eventInterest-${interest.id}">
+                            <label class="form-check-label" for="eventInterest-${interest.id}">${interest.name}</label>
+                        `;
+
+                        interestContainer.appendChild(checkbox);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Ошибка загрузки категорий:", error);
+                document.getElementById("eventInterestContainer").innerHTML = "<p class='text-danger'>Ошибка загрузки категорий.</p>";
+            });
+    }
+
+    // Загружаем категории при открытии модального окна "Создать событие"
+    document.getElementById("createEventModal").addEventListener("show.bs.modal", function () {
+        loadInterestsForForm();
+    });
+});
+
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function loadAllInterests() {
+    fetch("/get_all_interests")
+        .then(response => response.json())
+        .then(data => {
+            let containers = [
+                document.getElementById("interestFilters"),
+                document.getElementById("interestFiltersMobile")
+            ];
+
+            containers.forEach(container => {
+                if (!container) return;
+
+                container.innerHTML = "";
+
+                data.forEach(parent => {
+                    let parentDiv = document.createElement("div");
+                    parentDiv.classList.add("form-check");
+
+                    parentDiv.innerHTML = `
+                        <input class="form-check-input interest-checkbox" type="checkbox" name="category" value="${parent.name}" id="interest-${parent.id}-${container.id}">
+                        <label class="form-check-label fw-bold" for="interest-${parent.id}-${container.id}">${parent.name}</label>
+                    `;
+                    container.appendChild(parentDiv);
+
+                    // Подкатегории
+                    if (parent.children) {
+                        parent.children.forEach(child => {
+                            let childDiv = document.createElement("div");
+                            childDiv.classList.add("form-check", "ms-3");
+
+                            childDiv.innerHTML = `
+                                <input class="form-check-input interest-checkbox" type="checkbox" name="category" value="${child.name}" id="interest-${child.id}-${container.id}">
+                                <label class="form-check-label" for="interest-${child.id}-${container.id}">${child.name}</label>
+                            `;
+                            container.appendChild(childDiv);
+                        });
+                    }
+                });
+            });
+
+            restoreCheckedFilters();  // если сохраняешь фильтры
+        })
+        .catch(error => {
+            console.error("Ошибка загрузки интересов:", error);
+            if (document.getElementById("interestFilters"))
+                document.getElementById("interestFilters").innerHTML = "<p class='text-danger'>Ошибка загрузки</p>";
+            if (document.getElementById("interestFiltersMobile"))
+                document.getElementById("interestFiltersMobile").innerHTML = "<p class='text-danger'>Ошибка загрузки</p>";
+        });
+}
+
+
+    function restoreCheckedFilters() {
+        let urlParams = new URLSearchParams(window.location.search);
+        let selectedCategories = urlParams.getAll("category");
+
+        document.querySelectorAll(".interest-checkbox").forEach(checkbox => {
+            if (selectedCategories.includes(checkbox.value)) {
+                checkbox.checked = true;
+            }
+        });
+
+        updateAppliedFilters();
+    }
+
+    function updateAppliedFilters() {
+        let checkedFilters = [];
+        document.querySelectorAll(".interest-checkbox:checked").forEach(checkbox => {
+            checkedFilters.push(checkbox.value);
+        });
+
+        let filtersContainer = document.getElementById("appliedFiltersContainer");
+        let appliedFiltersText = document.getElementById("appliedFilters");
+        let resetBtn = document.getElementById("resetFiltersBtn");
+
+        if (checkedFilters.length > 0) {
+            filtersContainer.classList.remove("d-none");
+            appliedFiltersText.textContent = `"${checkedFilters.join(', ')}" найдено:`;
+        } else {
+            filtersContainer.classList.add("d-none");
+        }
+    }
+
+    document.getElementById("resetFiltersBtn").addEventListener("click", function () {
+        window.location.href = window.location.pathname;  // Сброс URL и перезагрузка
+    });
+
+    document.querySelectorAll(".interest-checkbox").forEach(checkbox => {
+        checkbox.addEventListener("change", updateAppliedFilters);
+    });
+
+    loadAllInterests();
+});
+
+    document.addEventListener("DOMContentLoaded", function () {
+    const filterForm = document.querySelector("form");
+    const categoryCheckboxes = document.querySelectorAll(".interest-checkbox");
+    const dateInput = document.getElementById("selectedDate");
+    const locationSelect = document.querySelector("select[name='location']");
+    const resetBtn = document.getElementById("resetFiltersBtn");
+
+    // ✅ Восстанавливаем сохранённые фильтры из localStorage
+    function restoreFilters() {
+        let savedFilters = JSON.parse(localStorage.getItem("savedFilters")) || {};
+
+        // Категории (чекбоксы)
+        if (savedFilters.categories) {
+            categoryCheckboxes.forEach(checkbox => {
+                if (savedFilters.categories.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
+        // Дата (календарь)
+        if (savedFilters.date) {
+            dateInput.value = savedFilters.date;
+        }
+
+        // Местоположение (выпадающий список)
+        if (savedFilters.location) {
+            locationSelect.value = savedFilters.location;
+        }
+
+        updateAppliedFilters();
+    }
+
+    // ✅ Сохраняем фильтры в localStorage при изменении
+    function saveFilters() {
+        let selectedCategories = Array.from(categoryCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+        let filtersToSave = {
+            categories: selectedCategories,
+            date: dateInput.value,
+            location: locationSelect.value
+        };
+
+        localStorage.setItem("savedFilters", JSON.stringify(filtersToSave));
+    }
+
+    // ✅ Обновляем отображение выбранных фильтров
+    function updateAppliedFilters() {
+        let checkedFilters = [];
+        document.querySelectorAll(".interest-checkbox:checked").forEach(checkbox => {
+            checkedFilters.push(checkbox.value);
+        });
+
+        let filtersContainer = document.getElementById("appliedFiltersContainer");
+        let appliedFiltersText = document.getElementById("appliedFilters");
+
+        if (checkedFilters.length > 0 || dateInput.value || locationSelect.value) {
+            filtersContainer.classList.remove("d-none");
+            appliedFiltersText.textContent = `"${checkedFilters.join(', ')}" найдено:`;
+        } else {
+            filtersContainer.classList.add("d-none");
+        }
+    }
+
+    // ✅ Обработчики событий для сохранения фильтров
+    categoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener("change", function () {
+            saveFilters();
+            updateAppliedFilters();
+        });
+    });
+
+    dateInput.addEventListener("change", function () {
+        saveFilters();
+        updateAppliedFilters();
+    });
+
+    locationSelect.addEventListener("change", function () {
+        saveFilters();
+        updateAppliedFilters();
+    });
+
+    // ✅ При нажатии "Сброс" очищаем localStorage и обновляем страницу
+    resetBtn.addEventListener("click", function () {
+        localStorage.removeItem("savedFilters");
+        window.location.href = window.location.pathname;
+    });
+
+    // Восстанавливаем фильтры при загрузке страницы
+    restoreFilters();
+});
+
+
+</script>
+
+<script src="https://api-maps.yandex.ru/2.1/?apikey=7494aa8b-ef09-4ac8-b122-ea4aa6791b3d&lang=ru_RU"></script>
+<script>
+    function initMap() {
+        ymaps.ready(function () {
+            var map = new ymaps.Map("map", {
+                center: [43.238949, 76.889709], // Алматы (по умолчанию)
+                zoom: 12,
+                controls: ["zoomControl", "geolocationControl"] // Добавляем кнопки управления
+            });
+
+            var placemark;
+
+            map.events.add("click", function (e) {
+                var coords = e.get("coords");
+
+                if (placemark) {
+                    placemark.geometry.setCoordinates(coords);
+                } else {
+                    placemark = new ymaps.Placemark(coords, {}, { draggable: true });
+                    map.geoObjects.add(placemark);
+                }
+
+                document.getElementById("eventCoordinates").value = coords.join(",");
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", initMap);
+</script>
+
+
+<script>
+
+    document.getElementById('createEventForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        alert("Событие успешно создано!"); // Здесь можно отправить данные на сервер
+        let modal = new bootstrap.Modal(document.getElementById('createEventModal'));
+        modal.hide();
+    });
+</script>
+
+<script>
+    document.getElementById("createEventForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let formData = new FormData();
+    formData.append("title", document.getElementById("eventTitle").value);
+    formData.append("description", document.getElementById("eventDescription").value);
+    formData.append("location", document.getElementById("eventLocation").value);
+    formData.append("date", document.getElementById("eventDate").value);
+    formData.append("time", document.getElementById("eventTime").value);
+    formData.append("coordinates", document.getElementById("eventCoordinates").value);
+    formData.append("city_id", document.getElementById("eventCity").value);
+
+
+    // ✅ Добавляем ключевые слова
+    let selectedKeywords = [];
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedKeywords.push(checkbox.value);
+    });
+    formData.append("keywords", selectedKeywords.join(", "));
+
+    // ✅ Проверяем, выбран ли файл, и добавляем его
+    let fileInput = document.getElementById("event_image");
+    if (fileInput.files.length > 0) {
+        formData.append("event_image", fileInput.files[0]);
+    }
+
+    fetch("/create_event", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ " + data.message);
+            location.reload();
+        } else {
+            alert("❌ " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка при создании события:", error));
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Страница загружена. Устанавливаем изображение события по умолчанию.");
+
+    // Получаем элементы
+    let eventPreview = document.getElementById("event-preview");
+    let fileInput = document.getElementById("event_image");
+
+    // 📌 Проверяем, что элементы существуют
+    if (!eventPreview || !fileInput) {
+        console.error("❌ Ошибка: элемент event-preview или event_image не найден в DOM!");
+        return;
+    }
+
+    // 📌 Устанавливаем стандартное изображение при загрузке страницы
+    eventPreview.src = "/static/uploads/default_event.jpg";
+
+    // 📌 Обработчик выбора файла
+    fileInput.addEventListener("change", function () {
+        let file = this.files[0];
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                eventPreview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            eventPreview.src = "/static/uploads/default_event.jpg";  // Если файл не выбран, вернуть стандартное
+        }
+    });
+});
+</script>
+<script>
+document.getElementById("generateDescriptionBtn").addEventListener("click", function () {
+    let title = document.getElementById("eventTitle").value.trim();
+    let descriptionField = document.getElementById("eventDescription");
+
+    if (!title) {
+        alert("❌ Введите название события перед генерацией!");
+        return;
+    }
+
+    // Показываем, что идёт загрузка
+    descriptionField.value = "Генерируем описание...";
+    document.getElementById("generateDescriptionBtn").disabled = true;
+
+    fetch("/generate_description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            descriptionField.value = data.description;
+        } else {
+            alert("❌ " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка генерации:", error))
+    .finally(() => {
+        document.getElementById("generateDescriptionBtn").disabled = false;
+    });
+});
+</script>
+
+<script>
+document.getElementById("support-btn").addEventListener("click", function () {
+    document.getElementById("support-chat-modal").style.display = "flex";
+});
+document.getElementById("close-chat").addEventListener("click", function () {
+    document.getElementById("support-chat-modal").style.display = "none";
+});
+
+document.getElementById("send-chat").addEventListener("click", function () {
+    sendMessage();
+});
+document.getElementById("chat-input").addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+});
+
+
+    function sendMessage() {
+    let inputField = document.getElementById("chat-input");
+    let message = inputField.value.trim();
+    if (!message) return;
+
+    let chatBody = document.getElementById("chat-messages");
+
+    // Контейнер сообщения пользователя (выравнивание по правому краю)
+    let userMessageContainer = document.createElement("div");
+    userMessageContainer.classList.add("user-message-container");
+
+    let userMessage = document.createElement("div");
+    userMessage.classList.add("user-message");
+    userMessage.textContent = message;
+
+    userMessageContainer.appendChild(userMessage);
+    chatBody.appendChild(userMessageContainer);
+
+    inputField.value = "";
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Отправляем запрос в ИИ
+    fetch("/support_chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let botMessage = document.createElement("div");
+        botMessage.classList.add("system-message");
+        botMessage.textContent = data.reply;
+        chatBody.appendChild(botMessage);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    })
+    .catch(error => console.error("Ошибка:", error));
+}
+
+
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const notificationBtn = document.getElementById("notificationBtn");
+    const notificationDropdown = document.getElementById("notificationDropdown");
+    const newNotifications = document.getElementById("newNotifications");
+    const readNotifications = document.getElementById("readNotifications");
+    const notificationCount = document.getElementById("notificationCount");
+    const markAllReadBtn = document.getElementById("markAllRead");
+
+
+function openReviewModal(event) {
+    event.preventDefault();
+    let eventId = event.target.dataset.eventId;
+    let notificationId = event.target.dataset.notificationId;
+
+    // Устанавливаем ID события в скрытый input
+    document.getElementById("reviewEventId").value = eventId;
+    document.getElementById("reviewText").value = "";
+    document.getElementById("reviewRating").value = "5";
+
+    function removeBackdrop() {
+        document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+        document.body.classList.remove("modal-open");
+        document.body.style.overflow = "auto"; // Разрешаем прокрутку
+        document.body.style.paddingRight = ""; // Исправляем смещение
+    }
+
+    // При каждом закрытии модалки - удаляем backdrop
+    document.querySelectorAll(".modal").forEach(modal => {
+        modal.addEventListener("hidden.bs.modal", function () {
+            removeBackdrop();
+        });
+    });
+
+    // Гарантированное удаление backdrop через 500мс (если вдруг остался)
+    setInterval(removeBackdrop, 200);
+
+    let reviewModalEl = document.getElementById("reviewModal");
+
+    // ✅ Получаем существующий экземпляр или создаём новый (избегаем дубликатов)
+    let reviewModal = bootstrap.Modal.getOrCreateInstance(reviewModalEl);
+
+    // ✅ Удаляем backdrop при закрытии
+    reviewModalEl.addEventListener("hidden.bs.modal", function () {
+        removeBackdrop();
+    });
+
+    reviewModal.show();
+}
+
+
+    // Открытие и закрытие списка уведомлений
+    notificationBtn.addEventListener("click", function () {
+        notificationDropdown.classList.toggle("show-dropdown");
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
+            notificationDropdown.classList.remove("show-dropdown");
+        }
+    });
+
+    // ✅ Обработчик для кнопки "Отметить все как прочитанные"
+    markAllReadBtn.addEventListener("click", function () {
+        fetch("/mark_notifications_as_read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelectorAll(".notification-item").forEach(item => {
+                    item.classList.add("read");
+                    item.classList.remove("notification-new");
+                });
+
+                notificationCount.textContent = "";
+                notificationCount.classList.add("d-none");
+
+                setTimeout(loadNotifications, 500);
+            } else {
+                console.error("Ошибка:", data.message);
+            }
+        })
+        .catch(error => console.error("Ошибка:", error));
+    });
+
+    // ✅ Добавляем обработчики событий ДИНАМИЧЕСКИ через event delegation
+    document.addEventListener("click", function (event) {
+        if (event.target.matches(".accept-btn")) {
+            const userId = event.target.dataset.userId;
+            const notificationId = event.target.dataset.notificationId;
+            acceptFriend(userId, notificationId);
+        }
+
+        if (event.target.matches(".decline-btn")) {
+            const userId = event.target.dataset.userId;
+            const notificationId = event.target.dataset.notificationId;
+            declineFriend(userId, notificationId);
+        }
+    });
+
+    function acceptFriend(userId, notificationId) {
+        fetch(`/accept_friend_request/${userId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let buttons = document.getElementById(`friend-buttons-${notificationId}`);
+                if (buttons) {
+                    buttons.innerHTML = `<span class="text-success">✅ Запрос принят</span>`;
+                }
+
+                document.querySelector(`.notification-item[data-id="${notificationId}"]`)?.remove();
+                setTimeout(loadNotifications, 500);
+            }
+        })
+        .catch(error => console.error("Ошибка:", error));
+    }
+
+    function declineFriend(userId, notificationId) {
+        fetch(`/decline_friend_request/${userId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let buttons = document.getElementById(`friend-buttons-${notificationId}`);
+                if (buttons) {
+                    buttons.innerHTML = `<span class="text-danger">❌ Запрос отклонён</span>`;
+                }
+
+                document.querySelector(`.notification-item[data-id="${notificationId}"]`)?.remove();
+                setTimeout(loadNotifications, 500);
+            }
+        })
+        .catch(error => console.error("Ошибка:", error));
+    }
+
+document.getElementById("markAllRead").addEventListener("click", function () {
+    fetch("/mark_notifications_as_read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log("✅ Все уведомления помечены как прочитанные");
+
+            // Обновляем UI вручную без перезагрузки
+            document.querySelectorAll(".notification-item").forEach(item => {
+                item.classList.add("read");
+                item.classList.remove("notification-new");
+            });
+
+            // Очищаем счётчик уведомлений
+            let notificationCount = document.getElementById("notificationCount");
+            notificationCount.textContent = "";
+            notificationCount.classList.add("d-none");
+
+            // Обновляем уведомления через 1 секунду
+            setTimeout(() => {
+    loadNotifications();
+}, 2000); // даём немного больше времени серверу на запись
+
+        } else {
+            console.error("Ошибка при отметке всех как прочитанных:", data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка:", error));
+});
+
+
+    // ✅ Функция загрузки уведомлений
+function loadNotifications() {
+    console.log("⏳ Загружаем уведомления...");
+
+    fetch("/get_notifications")
+        .then(response => response.json())
+        .then(data => {
+            const newNotifications = document.getElementById("newNotifications");
+            const readNotifications = document.getElementById("readNotifications");
+            const notificationCount = document.getElementById("notificationCount");
+
+            // Очистка перед обновлением
+            newNotifications.innerHTML = "";
+            readNotifications.innerHTML = "";
+
+let unreadCount = data.filter(n => !Boolean(Number(n.is_read))).length;
+
+            notificationCount.textContent = unreadCount || "";
+            notificationCount.classList.toggle("d-none", unreadCount === 0);
+
+            data.forEach(n => {
+                let avatar = n.sender_avatar ? `<img src="${n.sender_avatar}" class="notification-avatar">` : "";
+                let buttons = "";
+
+                // ✅ Обработка заявок в друзья
+                if (n.action_type === "friend_request") {
+                    buttons = `
+                        <div class="friend-request-buttons" id="friend-buttons-${n.id}">
+                            <button class="accept-btn" data-user-id="${n.sender_id}" data-notification-id="${n.id}">✔</button>
+                            <button class="decline-btn" data-user-id="${n.sender_id}" data-notification-id="${n.id}">✖</button>
+                        </div>
+                    `;
+                }
+
+                // ✅ Обработка завершения событий (Оставить отзыв)
+                if (n.action_type === "event_completed" && n.event_id) {
+                    buttons = `
+                        <div class="review-buttons" id="review-buttons-${n.id}">
+                            <button class="btn btn-warning leave-review" data-event-id="${n.event_id}" data-notification-id="${n.id}">
+                                ✍ Оставить отзыв
+                            </button>
+                        </div>
+                    `;
+                }
+
+                let profileLink = n.sender_id ? `/profile/${n.sender_id}` : "#";
+
+                let notificationHTML = `
+                    <div class="notification-item d-flex align-items-center ${Number(n.is_read) === 1 ? 'read' : 'notification-new'}"
+                         data-id="${n.id}" data-sender-id="${n.sender_id}">
+                        <a href="${profileLink}" class="d-flex align-items-center">
+                            ${avatar}
+                            <div class="notification-text">
+                                <div>${n.message}</div>
+                                <small class="notification-time">${n.timestamp}</small>
+                            </div>
+                        </a>
+                        ${buttons}
+                    </div>
+                `;
+
+                if (n.is_read) {
+                    readNotifications.innerHTML += notificationHTML;
+                } else {
+                    newNotifications.innerHTML += notificationHTML;
+                }
+            });
+
+            // ✅ Перепривязываем события на кнопки (исправлено!)
+            attachEventHandlers();
+        })
+        .catch(error => console.error("❌ Ошибка загрузки уведомлений:", error));
+}
+
+// ✅ Обновление событий после рендера
+function attachEventHandlers() {
+    console.log("🔄 Обновляем обработчики событий...");
+
+    document.querySelectorAll(".accept-btn").forEach(button => {
+        button.removeEventListener("click", handleAcceptFriend);
+        button.addEventListener("click", handleAcceptFriend);
+    });
+
+    document.querySelectorAll(".decline-btn").forEach(button => {
+        button.removeEventListener("click", handleDeclineFriend);
+        button.addEventListener("click", handleDeclineFriend);
+    });
+
+    document.querySelectorAll(".leave-review").forEach(button => {
+        button.removeEventListener("click", openReviewModal);
+        button.addEventListener("click", openReviewModal);
+    });
+}
+
+// ✅ Функция принятия заявки в друзья
+function handleAcceptFriend(event) {
+    const userId = event.target.dataset.userId;
+    const notificationId = event.target.dataset.notificationId;
+
+    fetch(`/accept_friend_request/${userId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let buttons = document.getElementById(`friend-buttons-${notificationId}`);
+                if (buttons) {
+                    buttons.innerHTML = `<span class="text-success">✅ Принято</span>`;
+                }
+                setTimeout(loadNotifications, 500);
+            }
+        })
+        .catch(error => console.error("❌ Ошибка:", error));
+}
+
+// ✅ Функция отклонения заявки в друзья
+function handleDeclineFriend(event) {
+    const userId = event.target.dataset.userId;
+    const notificationId = event.target.dataset.notificationId;
+
+    fetch(`/decline_friend_request/${userId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let buttons = document.getElementById(`friend-buttons-${notificationId}`);
+                if (buttons) {
+                    buttons.innerHTML = `<span class="text-danger">❌ Отклонено</span>`;
+                }
+                setTimeout(loadNotifications, 500);
+            }
+        })
+        .catch(error => console.error("❌ Ошибка:", error));
+
+        fetch(`/submit_review/${eventId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        text: reviewText,
+        rating: parseInt(reviewRating, 10)
+    })
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        alert("✅ Отзыв успешно оставлен!");
+        let reviewButton = document.querySelector(`.leave-review[data-event-id="${eventId}"]`);
+        if (reviewButton) {
+            reviewButton.remove();  // ❌ Удаляем кнопку после отзыва
+        }
+    } else {
+        alert("❌ Ошибка: " + data.message);
+    }
+})
+.catch(error => console.error("Ошибка при отправке отзыва:", error));
+
+}
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    let reviewModal = new bootstrap.Modal(document.getElementById("reviewModal"));
+
+    document.querySelectorAll(".leave-review").forEach(button => {
+        button.addEventListener("click", function (event) {
+            event.preventDefault();
+            let eventId = this.dataset.eventId;
+            document.getElementById("reviewEventId").value = eventId;
+
+            // Очистка полей перед открытием
+            document.getElementById("reviewText").value = "";
+            document.getElementById("reviewRating").value = "5";
+
+            // ✅ Открываем модальное окно
+            reviewModal.show();
+        });
+    });
+
+
+
+    // ✅ Закрытие при отправке
+    document.getElementById("submitReview").addEventListener("click", function () {
+        let eventId = document.getElementById("reviewEventId").value;
+        let reviewText = document.getElementById("reviewText").value.trim();
+        let reviewRating = document.getElementById("reviewRating").value;
+
+        if (!reviewText) {
+            alert("❌ Напишите отзыв перед отправкой!");
+            return;
+        }
+
+        fetch(`/submit_review/${eventId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: reviewText,
+                rating: parseInt(reviewRating, 10)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("✅ Отзыв успешно оставлен!");
+                reviewModal.hide(); // ✅ Закрываем окно после успешной отправки
+            } else {
+                alert("❌ Ошибка: " + data.message);
+            }
+        })
+        .catch(error => console.error("Ошибка при отправке отзыва:", error));
+    });
+});
+
+
+
+// ✅ Отправка отзыва
+document.getElementById("submitReview").addEventListener("click", function () {
+    let eventId = document.getElementById("reviewEventId").value;
+    let reviewText = document.getElementById("reviewText").value.trim();
+    let reviewRating = document.getElementById("reviewRating").value;
+
+    if (!reviewText) {
+        alert("❌ Напишите отзыв перед отправкой!");
+        return;
+    }
+
+    fetch(`/submit_review/${eventId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        text: reviewText,  // ✅ Название ключа соответствует бэку
+        rating: parseInt(reviewRating, 10)  // ✅ Приводим рейтинг к int
+    })
+})
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Отзыв успешно оставлен!");
+
+            // Закрываем модальное окно
+            let reviewModal = bootstrap.Modal.getInstance(document.getElementById("reviewModal"));
+            reviewModal.hide();
+
+            // Удаляем кнопку из списка уведомлений
+            let notificationId = document.querySelector(".leave-review[data-to-remove]")?.dataset.toRemove;
+            if (notificationId) {
+                document.querySelector(`.notification-item[data-id="${notificationId}"]`)?.remove();
+            }
+        } else {
+            alert("❌ Ошибка: " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка при отправке отзыва:", error));
+});
+
+    // ✅ Обновляем уведомления каждые 5 секунд
+    setInterval(loadNotifications, 5000);
+    loadNotifications();
+});
+
+    document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".modal").forEach(modal => {
+        modal.addEventListener("hidden.bs.modal", function () {
+            removeBackdrop();
+        });
+    });
+});
+
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // ✅ Проверяем поддержку уведомлений
+    if (!("Notification" in window)) {
+        console.log("❌ Браузер не поддерживает уведомления");
+    } else if (Notification.permission !== "granted") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                console.log("✅ Уведомления разрешены");
+            } else {
+                console.log("❌ Уведомления заблокированы");
+            }
+        });
+    }
+
+    // ✅ Подключаем WebSocket к серверу
+    const socket = io("/", { transports: ["websocket"] });
+
+    // ✅ Подписываемся на свой канал
+    socket.on(`notification_{{ current_user.id }}`, function (data) {
+        console.log("🔔 Новое уведомление:", data);
+
+        // ✅ Показываем уведомление в браузере
+        if (Notification.permission === "granted") {
+            new Notification(data.title, { body: data.message });
+        }
+    });
+
+    // ✅ Тестовая кнопка (можно удалить)
+    document.getElementById("testNotification").addEventListener("click", function () {
+        fetch("/send_test_notification");
+    });
+});
+</script>
+
+<section class="py-5 bg-light soon-events-section">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-2 text-primary">Уже скоро 🔥</h2>
+    <p class="text-center text-muted mb-4">Не пропусти ближайшие события!</p>
+
+    <div class="scroll-wrapper">
+      <div class="event-scroller">
+        {% for event in soon_events %}
+        <div class="event-card">
+          <img src="{{ event.image or 'https://via.placeholder.com/300' }}" class="event-img-top" alt="Event image">
+          <div class="event-card-body">
+            <h5 class="fw-bold">{{ event.title[:40] }}</h5>
+            <p class="text-muted small mb-2">{{ event.description[:60] }}...</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge bg-primary">
+                <i class="fa-regular fa-clock me-1"></i> {{ event.date.strftime('%d.%m') }} {{ event.time }}
+              </span>
+            </div>
+            <small class="text-muted">{{ get_time_left(event.date, event.time) }}</small>
+            <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-outline-primary btn-sm mt-2">Подробнее</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="container my-5">
+  <div class="text-center mb-4">
+    <h2 class="fw-bold" style="
+      background: linear-gradient(135deg, #6c63ff, #48c6ef);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    ">Часто задаваемые вопросы</h2>
+    <p class="text-muted">Ответы на популярные вопросы о платформе Kezen</p>
+  </div>
+
+  <div class="accordion shadow-sm" id="faqAccordion" style="border-radius: 14px; overflow: hidden;">
+
+    <div class="accordion-item border-0">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+          📌 Как зарегистрироваться на платформе Kezen?
+        </button>
+      </h2>
+      <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+        <div class="accordion-body text-muted">
+          Нажмите "Зарегистрироваться" на странице входа, введите данные, выберите интересы и подтвердите регистрацию.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item border-0">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+          🎯 Как создать своё событие?
+        </button>
+      </h2>
+      <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+        <div class="accordion-body text-muted">
+          Нажмите кнопку "Создать событие", заполните форму и опубликуйте — ваше событие увидят другие пользователи.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item border-0">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+          🤝 Можно ли вступать в несколько событий?
+        </button>
+      </h2>
+      <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+        <div class="accordion-body text-muted">
+          Конечно! Вы можете участвовать в нескольких событиях одновременно, если они не пересекаются по времени.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item border-0">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+          🛟 Что делать, если нужна помощь?
+        </button>
+      </h2>
+      <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+        <div class="accordion-body text-muted">
+          Просто нажмите на иконку чата поддержки в правом нижнем углу — наш бот всегда на связи!
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer bg-dark text-white pt-5 pb-4">
+    <div class="container">
+        <div class="row">
+
+            <!-- Контакты -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h5 class="fw-bold">📍 Наши контакты</h5>
+                <p class="mb-1"><i class="fas fa-map-marker-alt"></i> Алматы, Казахстан</p>
+                <p class="mb-1"><i class="fas fa-phone-alt"></i> +7 (777) 123-45-67</p>
+                <p class="mb-1"><i class="fas fa-envelope"></i> info@kezen.kz</p>
+                <p><i class="fas fa-clock"></i> Пн-Вс: 10:00 - 22:00</p>
+            </div>
+
+            <!-- Соцсети -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h5 class="fw-bold">🌍 Мы в соцсетях</h5>
+                <div class="d-flex">
+                    <a href="https://instagram.com/yourprofile" class="btn btn-outline-light me-2">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://t.me/yourchannel" class="btn btn-outline-light me-2">
+                        <i class="fab fa-telegram"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@yourchannel" class="btn btn-outline-light">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Карта -->
+            <div class="col-lg-4 col-md-12 mb-4">
+                <h5 class="fw-bold">🗺 Найдите нас</h5>
+                <div id="footerMap" style="width: 100%; height: 200px; border-radius: 8px;"></div>
+            </div>
+
+        </div>
+
+        <!-- Навигация -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <a href="/" class="text-white text-decoration-none mx-2">Главная</a> |
+                <a href="/events" class="text-white text-decoration-none mx-2">События</a> |
+                <a href="/about" class="text-white text-decoration-none mx-2">О нас</a> |
+                <a href="/contact" class="text-white text-decoration-none mx-2">Контакты</a>
+            </div>
+        </div>
+
+        <!-- Копирайт -->
+        <div class="row mt-3">
+            <div class="col-md-12 text-center">
+                <p class="mb-0">&copy; 2025 KEZEN. Все права защищены.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Подключение Яндекс.Карт -->
+<script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU"></script>
+<script>
+// ✅ Учет просмотров при появлении в зоне видимости
+function registerView(announcementId) {
+    fetch(`/announcement_view/${announcementId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => console.log("📊 Просмотр зарегистрирован для объявления:", announcementId))
+        .catch(error => console.error("❌ Ошибка при регистрации просмотра:", error));
+}
+
+// ✅ Учет клика при переходе на страницу объявления
+function registerClick(announcementId) {
+    fetch(`/announcement_click/${announcementId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => console.log("✅ Клик зарегистрирован для объявления:", announcementId))
+        .catch(error => console.error("❌ Ошибка при регистрации клика:", error));
+}
+
+// ✅ Следим за видимостью объявлений
+document.addEventListener("DOMContentLoaded", function () {
+    let observedItems = new Set();
+    let observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                let announcementId = entry.target.getAttribute("data-announcement-id");
+                if (announcementId && !observedItems.has(announcementId)) {
+                    registerView(announcementId);
+                    observedItems.add(announcementId);
+                }
+            }
+        });
+    });
+
+    // ✅ Добавляем data-атрибут `announcement-id` к каждому элементу `.carousel-item`
+    document.querySelectorAll(".carousel-item").forEach(item => {
+        let link = item.querySelector("a");
+        if (link) {
+            let announcementId = link.getAttribute("href").split("/").pop();
+            item.setAttribute("data-announcement-id", announcementId);
+            observer.observe(item);
+        }
+    });
+
+    // ✅ Принудительно регистрируем просмотры, если объявления уже видны при загрузке
+    setTimeout(() => {
+        document.querySelectorAll(".carousel-item").forEach(item => {
+            let rect = item.getBoundingClientRect();
+            if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+                let announcementId = item.getAttribute("data-announcement-id");
+                if (announcementId && !observedItems.has(announcementId)) {
+                    registerView(announcementId);
+                    observedItems.add(announcementId);
+                }
+            }
+        });
+    }, 1000);
+});
+</script>
+<script>
+// ✅ Функция учета кликов
+function registerClick(announcementId) {
+    fetch(`/announcement_click/${announcementId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => console.log("✅ Клик зарегистрирован для объявления:", announcementId))
+        .catch(error => console.error("❌ Ошибка при регистрации клика:", error));
+}
+
+// ✅ Добавляем обработчик клика на объявления в слайдере
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".carousel-item a").forEach(link => {
+        link.addEventListener("click", function (event) {
+            let announcementId = this.getAttribute("href").split("/").pop();
+            if (announcementId) {
+                registerClick(announcementId);
+            }
+        });
+    });
+});
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".like-btn.liked i").forEach(icon => {
+        icon.style.color = "red";
+        icon.style.transform = "scale(1.2)";
+    });
+});
+
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const skeletonContainer = document.getElementById("skeletonContainer");
+  const eventCards = document.querySelectorAll(".card.mb-4.shadow-sm");
+  if (eventCards.length > 0 && skeletonContainer) {
+    skeletonContainer.style.display = "none";
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+{% extends "moderator_base.html" %}
+
+{% block title %}{{ announcement.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-3">{{ announcement.title }}</h2>
+
+    <div class="text-muted mb-3">
+        🕒 Действительно до: <strong>{{ announcement.expiry_date.strftime('%d.%m.%Y') }}</strong> |
+        👤 Опубликовал: <strong>{{ announcement.user.username }}</strong>
+    </div>
+
+    {% if announcement.image %}
+        <img src="{{ url_for('static', filename='uploads/announcements/' + announcement.image.split('/')[-1]) }}"
+             class="img-fluid rounded shadow-sm d-block mx-auto mb-4"
+             alt="{{ announcement.title }}"
+             style="max-height: 400px; object-fit: cover;">
+    {% endif %}
+
+    <p class="lead">{{ announcement.description }}</p>
+
+    <div class="card p-3 shadow-sm mb-4">
+        <h5 class="text-center">📊 Статистика за 7 дней</h5>
+        <canvas id="statsChart"></canvas>
+    </div>
+
+    <div class="mt-4">
+        <strong>📈 Общая статистика:</strong>
+        <ul class="list-group">
+            <li class="list-group-item">👀 Всего просмотров: <strong>{{ total_views }}</strong></li>
+            <li class="list-group-item">📌 Всего кликов: <strong id="clickCount">{{ total_clicks }}</strong></li>
+            <li class="list-group-item">⚡ Средний CTR (клики/просмотры): <strong>{{ avg_ctr }}%</strong></li>
+            <li class="list-group-item">🔹 Статус:
+                <strong class="{{ 'text-success' if announcement.is_active else 'text-danger' }}">
+                    {{ "Активно" if announcement.is_active else "Неактивно" }}
+                </strong>
+            </li>
+        </ul>
+    </div>
+
+    <button class="btn btn-primary mt-3 w-100" id="actionButton" onclick="registerClick({{ announcement.id }})">
+        🔗 Перейти / Узнать больше
+    </button>
+
+    {% if current_user.is_moderator %}
+        <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-warning flex-grow-1" onclick="toggleAnnouncementStatus({{ announcement.id }})">
+                {{ "🛑 Деактивировать" if announcement.is_active else "✅ Активировать" }}
+            </button>
+            <button class="btn btn-danger flex-grow-1" onclick="deleteAnnouncement({{ announcement.id }})">
+                🗑 Удалить
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+function toggleAnnouncementStatus(announcementId) {
+    const isActive = {{ 'true' if announcement.is_active else 'false' }}; // Jinja вставит true/false
+    let requestData = {};
+
+    if (!isActive) {
+        const newDate = prompt("Введите новую дату окончания (в формате ГГГГ-ММ-ДД):");
+
+        if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+            alert("Неверный формат даты. Пример: 2025-04-15");
+            return;
+        }
+
+        requestData.expiry_date = newDate;
+    }
+
+    fetch(`/toggle_announcement/${announcementId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: Object.keys(requestData).length ? JSON.stringify(requestData) : null
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert("Ошибка: " + data.message);
+        }
+    })
+    .catch(error => console.error("Ошибка при изменении статуса:", error));
+}
+
+
+function deleteAnnouncement(announcementId) {
+    if (!confirm("Вы уверены, что хотите удалить объявление?")) return;
+
+    fetch(`/delete_announcement/${announcementId}`, { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = "/announcements";
+            }
+        })
+        .catch(error => console.error("Ошибка при удалении объявления:", error));
+}
+
+// Загружаем статистику и строим график
+function loadStatistics() {
+    fetch(`/announcement_stats/{{ announcement.id }}`)
+    .then(response => response.json())
+    .then(data => {
+        console.log("📊 Полученные данные:", data);
+
+        let canvasContainer = document.querySelector(".card.p-3"); // Контейнер для графика
+        let oldCanvas = document.getElementById("statsChart");
+
+        // ✅ Удаляем старый <canvas>, если он есть
+        if (oldCanvas) {
+            oldCanvas.remove();
+        }
+
+        // ✅ Создаем новый <canvas>
+        let newCanvas = document.createElement("canvas");
+        newCanvas.id = "statsChart";
+        newCanvas.style.maxWidth = "100%";  // 🔥 Фиксируем размер
+        newCanvas.style.maxHeight = "400px";
+
+        canvasContainer.appendChild(newCanvas);
+
+        let ctx = newCanvas.getContext("2d");
+
+        // ✅ Проверяем, существует ли объект Chart перед destroy()
+        if (window.statsChart && typeof window.statsChart.destroy === "function") {
+            window.statsChart.destroy();
+        }
+
+        // ✅ Создаем новый график
+        window.statsChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: data.dates,
+                datasets: [
+                    {
+                        label: "👀 Просмотры",
+                        data: data.views,
+                        borderColor: "blue",
+                        backgroundColor: "rgba(0, 0, 255, 0.2)",
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: "📌 Клики",
+                        data: data.clicks,
+                        borderColor: "red",
+                        backgroundColor: "rgba(255, 0, 0, 0.2)",
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    })
+    .catch(error => console.error("❌ Ошибка загрузки статистики:", error));
+
+}
+
+// Загружаем данные при загрузке страницы
+document.addEventListener("DOMContentLoaded", loadStatistics);
+</script>
+<style>
+    #statsChart {
+    max-width: 100%;
+    max-height: 400px; /* 🔥 Фиксируем высоту */
+}
+
+</style>
+{% endblock %}
