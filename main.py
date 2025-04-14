@@ -15,9 +15,8 @@ from flask import abort, make_response
 from sqlalchemy import and_, or_
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-import eventlet
-eventlet.monkey_patch()
-
+from gevent import monkey
+monkey.patch_all()
 polls = {}
 
 
