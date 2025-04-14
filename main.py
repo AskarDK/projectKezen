@@ -2326,12 +2326,6 @@ def like_event(event_id):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)  # 🔥 Используем `socketio.run()`
-
-
 
 def like_post(post, user):
     print(f"🚀 Отправка уведомления о лайке {user.username} -> {post.user_id}")
@@ -2456,5 +2450,9 @@ for n in notifications:
     print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
+
