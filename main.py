@@ -830,17 +830,6 @@ def api_login():
 
     return jsonify({"success": False, "message": "Неверный логин или пароль"}), 401
 
-@app.route("/approve_event/<int:event_id>", methods=["POST"])
-@login_required
-def approve_event(event_id):
-    if not current_user.is_moderator:
-        abort(403)
-
-    event = Event.query.get_or_404(event_id)
-    event.status = EventStatus.APPROVED.value
-    db.session.commit()
-
-    return jsonify({"success": True, "message": "Ивент одобрен!"})
 
 @app.route("/announcement_click/<int:announcement_id>", methods=["POST"])
 @login_required
