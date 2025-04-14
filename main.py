@@ -2434,10 +2434,6 @@ def handle_admin_message(data):
         "timestamp": message.timestamp.isoformat()
     }, room=f"admin_chat_{event_id}")
 
-notifications = Notification.query.all()
-for n in notifications:
-    print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
-
 port = int(os.environ.get("PORT", 5000))  # 5000 — дефолт для локального запуска
 
 socketio.run(app, host="0.0.0.0", port=port)
@@ -2446,6 +2442,12 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
+        # Вот сюда перенеси запросы к БД
+        notifications = Notification.query.all()
+        for n in notifications:
+            print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
+
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False)
+
 
