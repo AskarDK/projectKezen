@@ -18,6 +18,9 @@ from flask_cors import CORS
 from gevent import monkey
 monkey.patch_all()
 
+from gevent.pywsgi import WSGIServer
+from geventwebsocket.handler import WebSocketHandler
+
 from flask_socketio import SocketIO
 
 socketio = SocketIO(app, async_mode='gevent')
@@ -2440,15 +2443,8 @@ def handle_admin_message(data):
         "timestamp": message.timestamp.isoformat()
     }, room=f"admin_chat_{event_id}")
 
-port = int(os.environ.get("PORT", 8080))  # 5000 — дефолт для локального запуска
-
-socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
-
 
 if __name__ == "__main__":
-    from gevent.pywsgi import WSGIServer
-    from geventwebsocket.handler import WebSocketHandler
-
     with app.app_context():
         db.create_all()
         notifications = Notification.query.all()
@@ -2456,4 +2452,5 @@ if __name__ == "__main__":
             print(n.id, n.user_id, n.message, n.is_read, n.timestamp)
 
     port = int(os.environ.get("PORT", 8080))
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)
+    http_server = WSGIServer(("0.0.0.0", port), app, handler_class=WebSocketHandler)
+    http_server.serve_forever()
