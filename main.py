@@ -2450,12 +2450,7 @@ if __name__ == "__main__":
         db.create_all()
 
     port = int(os.environ.get("PORT", 8080))
-    from gevent.pywsgi import WSGIServer
-    from geventwebsocket.handler import WebSocketHandler
 
-    # ⛔️ Это неправильно:
-    # http_server = WSGIServer(("0.0.0.0", port), app, handler_class=WebSocketHandler)
-
-    # ✅ Правильно:
-    http_server = WSGIServer(("0.0.0.0", port), socketio.WSGIApp(app), handler_class=WebSocketHandler)
+    # Импортировали WSGIApp отдельно!
+    http_server = WSGIServer(("0.0.0.0", port), WSGIApp(socketio, app), handler_class=WebSocketHandler)
     http_server.serve_forever()
