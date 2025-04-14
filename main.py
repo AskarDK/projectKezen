@@ -17,6 +17,7 @@ from flask import abort, make_response
 from sqlalchemy import and_, or_
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
+from socketio import WSGIApp
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
