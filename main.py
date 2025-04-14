@@ -18,6 +18,7 @@ from sqlalchemy import and_, or_
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from socketio import WSGIApp
+app_wsgi = WSGIApp(socketio, app)
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
@@ -2452,5 +2453,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
 
     # Импортировали WSGIApp отдельно!
-    http_server = WSGIServer(("0.0.0.0", port), WSGIApp(socketio, app), handler_class=WebSocketHandler)
-    http_server.serve_forever()
+    http_server = WSGIServer(("0.0.0.0", port), app_wsgi, handler_class=WebSocketHandler)
+http_server.serve_forever()
