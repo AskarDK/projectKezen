@@ -1,6 +1,5 @@
 import uuid
 
-import openai
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,6 +19,8 @@ monkey.patch_all()
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
+
+import openai
 
 from flask_socketio import SocketIO
 
