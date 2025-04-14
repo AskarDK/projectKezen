@@ -1,4 +1,7 @@
 import uuid
+import os
+from gevent import monkey
+monkey.patch_all()
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -14,8 +17,6 @@ from flask import abort, make_response
 from sqlalchemy import and_, or_
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-from gevent import monkey
-monkey.patch_all()
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
@@ -24,7 +25,6 @@ import openai
 
 from flask_socketio import SocketIO
 
-socketio = SocketIO(app, async_mode='gevent')
 
 polls = {}
 
