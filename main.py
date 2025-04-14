@@ -2436,7 +2436,8 @@ def handle_admin_message(data):
 
 port = int(os.environ.get("PORT", 5000))  # 5000 — дефолт для локального запуска
 
-socketio.run(app, host="0.0.0.0", port=port)
+socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
+
 
 if __name__ == "__main__":
     with app.app_context():
