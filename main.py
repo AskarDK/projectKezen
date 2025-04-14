@@ -33,8 +33,6 @@ polls = {}
 logging.basicConfig(level=logging.DEBUG)
 
 
-import os
-
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
